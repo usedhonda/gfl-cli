@@ -137,6 +137,19 @@ def _apply_fallback_details(
 
 
 def _build_segments(query: SearchQuery) -> list[FlightData]:
+    if query.trip == "multi-city":
+        if not query.segments:
+            raise UpstreamFormatChangedError("multi-city query missing segments")
+        return [
+            FlightData(
+                date=segment.date.isoformat(),
+                from_airport=segment.origin,
+                to_airport=segment.destination,
+                max_stops=query.max_stops,
+            )
+            for segment in query.segments
+        ]
+
     segments = [
         FlightData(
             date=query.date.isoformat(),
@@ -200,11 +213,17 @@ def _request_once(query: SearchQuery) -> ProviderResponse:
     try:
         parsed = parse_response(response)
     except RuntimeError as exc:
+        if query.trip == "multi-city" and "No flights found" in str(exc):
+            raise UpstreamUnavailableError("multi-city results unavailable from upstream source") from exc
         raise UpstreamFormatChangedError(str(exc)) from exc
     except Exception as exc:
         raise UpstreamFormatChangedError(f"provider parse failed: {exc}") from exc
 
-    mapped_flights = map_flights(flights=parsed.flights, currency=query.currency)
+    mapped_flights = map_flights(
+        flights=parsed.flights,
+        currency=query.currency,
+        itinerary_segments=[segment.to_payload() for segment in query.segments],
+    )
     fallback_details = _extract_aria_fallback_details(response.text)
     mapped_flights = _apply_fallback_details(mapped_flights, fallback_details)
 

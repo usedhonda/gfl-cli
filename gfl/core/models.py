@@ -14,10 +14,24 @@ CalendarViewType = Literal["date-grid", "price-graph"]
 
 
 @dataclass(frozen=True)
-class SearchQueryInput:
+class SegmentSpec:
     origin: str
     destination: str
-    date: str
+    date: date
+
+    def to_payload(self) -> dict[str, str]:
+        return {
+            "origin": self.origin,
+            "destination": self.destination,
+            "date": self.date.isoformat(),
+        }
+
+
+@dataclass(frozen=True)
+class SearchQueryInput:
+    origin: str | None
+    destination: str | None
+    date: str | None
     return_date: str | None
     trip: str
     seat: str
@@ -38,6 +52,7 @@ class SearchQueryInput:
     arrive_after: str | None = None
     arrive_before: str | None = None
     max_duration_min: int | None = None
+    segments: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -65,6 +80,7 @@ class SearchQuery:
     arrive_after_min: int | None
     arrive_before_min: int | None
     max_duration_min: int | None
+    segments: tuple[SegmentSpec, ...] = ()
 
     def to_payload(self) -> dict[str, object]:
         return {
@@ -91,6 +107,7 @@ class SearchQuery:
             "arrive_after_min": self.arrive_after_min,
             "arrive_before_min": self.arrive_before_min,
             "max_duration_min": self.max_duration_min,
+            "segments": [segment.to_payload() for segment in self.segments],
         }
 
 

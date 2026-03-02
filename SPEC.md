@@ -32,6 +32,7 @@ Optional arguments:
 - `--seat economy|premium-economy|business|first`
 - `--max-stops <int>`
 - `--airline <IATA>` (repeatable)
+- `--segment <FROM:TO:YYYY-MM-DD>` (repeatable, for `trip=multi-city`)
 - `--adults <int>` default `1`
 - `--children <int>` default `0`
 - `--infants-in-seat <int>` default `0`
@@ -120,6 +121,8 @@ No undocumented code is allowed in output.
   - total passengers <= 9
   - `infants-on-lap <= adults`
 - `trip=round-trip` requires `return-date`.
+- `trip=multi-city` requires at least two `--segment` values.
+- `trip=multi-city` disallows `--origin/--destination/--date/--return-date`.
 - `end-date >= start-date` for calendar.
 
 ## 8. Runtime Behavior
@@ -157,3 +160,17 @@ Minimum test matrix:
 
 ## 12. Change Control
 Any change to command names, output schema, or error code registry requires explicit approval before implementation.
+
+## 13. Phase 2 Additions (Implemented)
+- `search trip=multi-city` is available in best-effort mode with repeatable `--segment FROM:TO:YYYY-MM-DD`.
+- `query.segments` is included in JSON output.
+- `results[0].flights[*].segments` is included for multi-city (request-echo model).
+- `meta.warnings` includes `multi_city.segments=request_echo` for multi-city responses.
+- upstream may return `UPSTREAM_UNAVAILABLE` when multi-city payload cannot be parsed.
+- `calendar --view price-graph` includes `results[*].graph` with:
+  - `point_index`
+  - `y_amount`
+  - `y_is_missing`
+  - `min_amount_in_range`
+  - `max_amount_in_range`
+  - `avg_amount_in_range`

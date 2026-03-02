@@ -8,6 +8,7 @@ from datetime import datetime
 from gfl.core.models import (
     CalendarQuery,
     CalendarQueryInput,
+    SegmentSpec,
     SearchQuery,
     SearchQueryInput,
 )
@@ -55,6 +56,12 @@ def _normalize_iata(raw: str, field: str) -> str:
     return value
 
 
+def _require_text(raw: str | None, field: str) -> str:
+    if raw is None or not raw.strip():
+        raise InputValidationError(f"{field} is required")
+    return raw.strip()
+
+
 def _normalize_lang(raw: str | None) -> str:
     if raw is None or not raw.strip():
         return "en"
@@ -81,6 +88,17 @@ def _normalize_airlines(airlines: tuple[str, ...]) -> tuple[str, ...]:
             raise InputValidationError("airline must be a valid IATA airline code")
         normalized.append(value)
     return tuple(normalized)
+
+
+def _parse_segment(raw: str) -> SegmentSpec:
+    parts = [part.strip() for part in raw.split(":")]
+    if len(parts) != 3 or any(not part for part in parts):
+        raise InputValidationError("segment must be FROM:TO:YYYY-MM-DD")
+
+    origin = _normalize_iata(parts[0], "segment origin")
+    destination = _normalize_iata(parts[1], "segment destination")
+    segment_date = _parse_date(parts[2], "segment date")
+    return SegmentSpec(origin=origin, destination=destination, date=segment_date)
 
 
 def _validate_common_runtime(timeout_sec: int, retries: int) -> None:
@@ -112,23 +130,9 @@ def _validate_passengers(
 
 
 def validate_search_input(raw: SearchQueryInput) -> SearchQuery:
-    origin = _normalize_iata(raw.origin, "origin")
-    destination = _normalize_iata(raw.destination, "destination")
-    depart_date = _parse_date(raw.date, "date")
-
     trip = raw.trip.strip().lower()
     if trip not in ALLOWED_TRIPS:
         raise InputValidationError("trip must be one-way|round-trip|multi-city")
-    if trip == "multi-city":
-        raise InputValidationError("trip=multi-city is not supported in phase 1")
-
-    return_date = None
-    if raw.return_date:
-        return_date = _parse_date(raw.return_date, "return-date")
-    if trip == "round-trip" and return_date is None:
-        raise InputValidationError("return-date is required when trip=round-trip")
-    if return_date and return_date < depart_date:
-        raise InputValidationError("return-date must be on or after date")
 
     seat = raw.seat.strip().lower()
     if seat not in ALLOWED_SEATS:
@@ -159,6 +163,45 @@ def validate_search_input(raw: SearchQueryInput) -> SearchQuery:
 
     if raw.max_duration_min is not None and raw.max_duration_min <= 0:
         raise InputValidationError("max-duration-min must be > 0")
+
+    origin: str
+    destination: str
+    depart_date = None
+    return_date = None
+    segments: tuple[SegmentSpec, ...] = ()
+
+    if trip == "multi-city":
+        if raw.origin and raw.origin.strip():
+            raise InputValidationError("origin is not allowed when trip=multi-city")
+        if raw.destination and raw.destination.strip():
+            raise InputValidationError("destination is not allowed when trip=multi-city")
+        if raw.date and raw.date.strip():
+            raise InputValidationError("date is not allowed when trip=multi-city")
+        if raw.return_date and raw.return_date.strip():
+            raise InputValidationError("return-date is not allowed when trip=multi-city")
+
+        parsed_segments = tuple(_parse_segment(item) for item in raw.segments)
+        if len(parsed_segments) < 2:
+            raise InputValidationError("at least 2 --segment values are required when trip=multi-city")
+
+        segments = parsed_segments
+        origin = segments[0].origin
+        destination = segments[-1].destination
+        depart_date = segments[0].date
+    else:
+        origin = _normalize_iata(_require_text(raw.origin, "origin"), "origin")
+        destination = _normalize_iata(_require_text(raw.destination, "destination"), "destination")
+        depart_date = _parse_date(_require_text(raw.date, "date"), "date")
+
+        if raw.segments:
+            raise InputValidationError("segment is only allowed when trip=multi-city")
+
+        if raw.return_date:
+            return_date = _parse_date(raw.return_date, "return-date")
+        if trip == "round-trip" and return_date is None:
+            raise InputValidationError("return-date is required when trip=round-trip")
+        if return_date and return_date < depart_date:
+            raise InputValidationError("return-date must be on or after date")
 
     _validate_passengers(
         adults=raw.adults,
@@ -192,6 +235,7 @@ def validate_search_input(raw: SearchQueryInput) -> SearchQuery:
         arrive_after_min=arrive_after_min,
         arrive_before_min=arrive_before_min,
         max_duration_min=raw.max_duration_min,
+        segments=segments,
     )
 
 

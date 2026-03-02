@@ -43,9 +43,18 @@ def _render_human(payload: dict[str, object]) -> str:
 def register(app: typer.Typer) -> None:
     @app.command("search")
     def search_command(
-        origin: Annotated[str, typer.Option("--origin", help="Origin IATA code")],
-        destination: Annotated[str, typer.Option("--destination", help="Destination IATA code")],
-        date: Annotated[str, typer.Option("--date", help="Departure date YYYY-MM-DD")],
+        origin: Annotated[
+            str | None,
+            typer.Option("--origin", help="Origin IATA code (required unless trip=multi-city)"),
+        ] = None,
+        destination: Annotated[
+            str | None,
+            typer.Option("--destination", help="Destination IATA code (required unless trip=multi-city)"),
+        ] = None,
+        date: Annotated[
+            str | None,
+            typer.Option("--date", help="Departure date YYYY-MM-DD (required unless trip=multi-city)"),
+        ] = None,
         return_date: Annotated[
             str | None,
             typer.Option("--return-date", help="Return date YYYY-MM-DD for round-trip"),
@@ -75,6 +84,13 @@ def register(app: typer.Typer) -> None:
         arrive_after: Annotated[str | None, typer.Option("--arrive-after")] = None,
         arrive_before: Annotated[str | None, typer.Option("--arrive-before")] = None,
         max_duration_min: Annotated[int | None, typer.Option("--max-duration-min")] = None,
+        segment: Annotated[
+            list[str],
+            typer.Option(
+                "--segment",
+                help="Repeat for multi-city: FROM:TO:YYYY-MM-DD",
+            ),
+        ] = [],
         output_format: Annotated[str, typer.Option("--format")] = "json",
         human: Annotated[bool, typer.Option("--human")] = False,
     ) -> None:
@@ -103,6 +119,7 @@ def register(app: typer.Typer) -> None:
                 arrive_after=arrive_after,
                 arrive_before=arrive_before,
                 max_duration_min=max_duration_min,
+                segments=tuple(segment),
             )
         )
         emit_payload(

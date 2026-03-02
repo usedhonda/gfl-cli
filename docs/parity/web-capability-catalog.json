@@ -4,7 +4,7 @@
     "web_label": "Basic route/date search",
     "web_control_type": "form",
     "scope": "search",
-    "cli_status": "supported",
+    "cli_status": "partial",
     "backend_status": "supported",
     "mapped_flag": "--origin --destination --date",
     "implementation_priority": "P0",
@@ -26,11 +26,11 @@
     "web_label": "Multi-city itinerary",
     "web_control_type": "trip-mode",
     "scope": "search",
-    "cli_status": "unsupported",
+    "cli_status": "supported",
     "backend_status": "partial",
     "mapped_flag": "--trip multi-city",
     "implementation_priority": "P2",
-    "notes": "Currently returns INVALID_INPUT"
+    "notes": "Best-effort via repeated --segment; segments are request-echo in output and may return UPSTREAM_UNAVAILABLE"
   },
   {
     "capability_id": "filter_max_stops",
@@ -114,11 +114,11 @@
     "web_label": "Date grid / price graph",
     "web_control_type": "calendar",
     "scope": "calendar",
-    "cli_status": "partial",
+    "cli_status": "supported",
     "backend_status": "partial",
     "mapped_flag": "--view date-grid|price-graph",
     "implementation_priority": "P1",
-    "notes": "View reflected as warning marker"
+    "notes": "View reflected as warning marker and results[*].graph aggregate fields"
   },
   {
     "capability_id": "bags_and_change_policies",

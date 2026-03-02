@@ -80,6 +80,32 @@ def test_search_round_trip_success_contract(monkeypatch):
     assert payload["results"][0]["trip"] == "round-trip"
 
 
+def test_search_multi_city_success_contract(monkeypatch):
+    monkeypatch.setattr(ff_client, "search_flights", lambda _query: _fake_provider_response())
+
+    result = runner.invoke(
+        app,
+        [
+            "search",
+            "--trip",
+            "multi-city",
+            "--segment",
+            "SFO:NRT:2026-03-23",
+            "--segment",
+            "NRT:CTS:2026-03-26",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    valid, reason = validate_contract(payload)
+    assert valid, reason
+    assert payload["results"][0]["trip"] == "multi-city"
+    assert len(payload["query"]["segments"]) == 2
+    assert len(payload["results"][0]["flights"][0]["segments"]) == 2
+    assert "multi_city.segments=request_echo" in payload["meta"]["warnings"]
+
+
 def test_search_invalid_iata_returns_invalid_input():
     result = runner.invoke(
         app,
@@ -110,6 +136,61 @@ def test_search_invalid_date_returns_invalid_input():
             "LAX",
             "--date",
             "2026-23-03",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "INVALID_INPUT"
+
+
+def test_search_multi_city_segment_format_returns_invalid_input():
+    result = runner.invoke(
+        app,
+        [
+            "search",
+            "--trip",
+            "multi-city",
+            "--segment",
+            "SFO-NRT-2026-03-23",
+            "--segment",
+            "NRT:CTS:2026-03-26",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "INVALID_INPUT"
+
+
+def test_search_multi_city_requires_at_least_two_segments():
+    result = runner.invoke(
+        app,
+        [
+            "search",
+            "--trip",
+            "multi-city",
+            "--segment",
+            "SFO:NRT:2026-03-23",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "INVALID_INPUT"
+
+
+def test_search_multi_city_rejects_origin_destination_date_flags():
+    result = runner.invoke(
+        app,
+        _base_args()
+        + [
+            "--trip",
+            "multi-city",
+            "--segment",
+            "SFO:NRT:2026-03-23",
+            "--segment",
+            "NRT:CTS:2026-03-26",
         ],
     )
 
@@ -157,6 +238,18 @@ def test_search_timeout(monkeypatch):
     assert result.exit_code == 1
     payload = json.loads(result.stdout)
     assert payload["error"]["code"] == "TIMEOUT"
+
+
+def test_search_upstream_unavailable(monkeypatch):
+    def _raise(_query):
+        raise ff_client.UpstreamUnavailableError("upstream unavailable")
+
+    monkeypatch.setattr(ff_client, "search_flights", _raise)
+    result = runner.invoke(app, _base_args())
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "UPSTREAM_UNAVAILABLE"
 
 
 def test_search_locale_currency_propagation(monkeypatch):

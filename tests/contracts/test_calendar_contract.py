@@ -61,6 +61,7 @@ def test_calendar_success_contract(monkeypatch):
     assert valid, reason
     assert payload["status"] == "success"
     assert len(payload["results"]) == 3
+    assert all("graph" not in row for row in payload["results"])
 
 
 def test_calendar_invalid_range_returns_invalid_input():
@@ -127,3 +128,13 @@ def test_calendar_locale_currency_and_view_warning(monkeypatch):
     assert payload["query"]["currency"] == "JPY"
     assert payload["query"]["view"] == "price-graph"
     assert "calendar.view=price-graph" in payload["meta"]["warnings"]
+    assert len(payload["results"]) == 3
+
+    for index, row in enumerate(payload["results"], start=1):
+        graph = row["graph"]
+        assert graph["point_index"] == index
+        assert graph["y_amount"] == 12000
+        assert graph["y_is_missing"] is False
+        assert graph["min_amount_in_range"] == 12000
+        assert graph["max_amount_in_range"] == 12000
+        assert graph["avg_amount_in_range"] == 12000.0

@@ -125,6 +125,7 @@ def run_search(raw_query: SearchQueryInput) -> dict[str, object]:
         "return_date": raw_query.return_date,
         "trip": raw_query.trip,
         "seat": raw_query.seat,
+        "segments": list(raw_query.segments),
     }
 
     try:
@@ -134,7 +135,17 @@ def run_search(raw_query: SearchQueryInput) -> dict[str, object]:
             flights=provider_response.flights,
             query=query,
         )
+        if query.segments:
+            query_segments = [segment.to_payload() for segment in query.segments]
+            for row in processed_flights:
+                current_segments = row.get("segments")
+                if isinstance(current_segments, list) and current_segments:
+                    continue
+                row["segments"] = [dict(segment) for segment in query_segments]
+
         warnings = _merge_warnings(provider_response.warnings, postprocess_warnings)
+        if query.trip == "multi-city":
+            warnings = _merge_warnings(warnings, ["multi_city.segments=request_echo"])
 
         return success_response(
             request_id=request_id,
@@ -254,6 +265,31 @@ def run_calendar(raw_query: CalendarQueryInput) -> dict[str, object]:
             cursor += timedelta(days=1)
 
         if query.view == "price-graph":
+            amounts = [
+                row["lowest_price"]["amount"]
+                for row in results
+                if isinstance(row.get("lowest_price"), dict)
+                and isinstance(row["lowest_price"].get("amount"), int)
+            ]
+            min_amount = min(amounts) if amounts else None
+            max_amount = max(amounts) if amounts else None
+            avg_amount = round(sum(amounts) / len(amounts), 2) if amounts else None
+
+            for index, row in enumerate(results, start=1):
+                lowest_price = row.get("lowest_price") if isinstance(row.get("lowest_price"), dict) else {}
+                y_amount = lowest_price.get("amount")
+                if not isinstance(y_amount, int):
+                    y_amount = None
+
+                row["graph"] = {
+                    "point_index": index,
+                    "y_amount": y_amount,
+                    "y_is_missing": y_amount is None,
+                    "min_amount_in_range": min_amount,
+                    "max_amount_in_range": max_amount,
+                    "avg_amount_in_range": avg_amount,
+                }
+
             warnings = _merge_warnings(warnings, ["calendar.view=price-graph"])
 
         return success_response(

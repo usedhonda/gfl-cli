@@ -26,6 +26,15 @@ uv run gfl search \
 ```
 
 ```bash
+uv run gfl search \
+  --trip multi-city \
+  --segment SFO:NRT:2026-03-23 \
+  --segment NRT:CTS:2026-03-26 \
+  --lang en-US \
+  --currency USD
+```
+
+```bash
 uv run gfl calendar \
   --origin SFO \
   --destination LAX \
@@ -65,7 +74,10 @@ Use `--format human` or `--human` for opt-in human-readable output.
   - `--depart-after/--depart-before` (`HH:MM`, 24h)
   - `--arrive-after/--arrive-before` (`HH:MM`, 24h)
   - `--max-duration-min`
+- `search --trip multi-city` requires repeated `--segment FROM:TO:YYYY-MM-DD` (>=2)
+  - current behavior is best-effort and may return `UPSTREAM_UNAVAILABLE` depending on upstream response shape
 - `calendar --view date-grid|price-graph` (default: `date-grid`)
+- `calendar --view price-graph` adds `results[*].graph` aggregate fields for AI-friendly parsing
 
 ## Error Codes
 
