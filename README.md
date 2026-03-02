@@ -90,6 +90,24 @@ Allowed stable error codes:
 - `TIMEOUT`
 - `INTERNAL_ERROR`
 
+## Skill Samples
+
+This repository includes reusable skill samples under `skills/`.
+
+- `skills/gfl-search-operator`: search execution and result summarization
+- `skills/gfl-calendar-analyst`: price-graph analysis for calendar output
+- `skills/gfl-parity-triage`: failure classification and parity triage flow
+
+Skill docs are written in English. Runtime prose should follow the user's language.
+Technical tokens stay canonical and must not be translated (flags, JSON keys, error codes).
+
+Language resolution order used by the samples:
+
+1. explicit language request in the current user message
+2. dominant language in the current user message
+3. last confirmed user language in the current session
+4. fallback to English
+
 ## Development Rule
 
 See [docs/development-rules.md](docs/development-rules.md).
