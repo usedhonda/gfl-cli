@@ -1,0 +1,86 @@
+[
+  {
+    "case_id": "us_sfo_lax_oneway",
+    "origin": "SFO",
+    "destination": "LAX",
+    "date": "2026-03-23",
+    "lang": "en-US",
+    "currency": "USD"
+  },
+  {
+    "case_id": "us_jfk_mia_oneway",
+    "origin": "JFK",
+    "destination": "MIA",
+    "date": "2026-03-24",
+    "lang": "en-US",
+    "currency": "USD"
+  },
+  {
+    "case_id": "jp_hnd_cts_oneway",
+    "origin": "HND",
+    "destination": "CTS",
+    "date": "2026-03-24",
+    "lang": "ja-JP",
+    "currency": "JPY"
+  },
+  {
+    "case_id": "jp_itm_oka_oneway",
+    "origin": "ITM",
+    "destination": "OKA",
+    "date": "2026-03-25",
+    "lang": "ja-JP",
+    "currency": "JPY"
+  },
+  {
+    "case_id": "transpac_hnd_jfk_roundtrip",
+    "origin": "HND",
+    "destination": "JFK",
+    "date": "2026-03-26",
+    "return_date": "2026-04-02",
+    "lang": "ja-JP",
+    "currency": "JPY"
+  },
+  {
+    "case_id": "transpac_lax_nrt_roundtrip",
+    "origin": "LAX",
+    "destination": "NRT",
+    "date": "2026-03-26",
+    "return_date": "2026-04-03",
+    "lang": "en-US",
+    "currency": "USD"
+  },
+  {
+    "case_id": "transatl_jfk_lhr_roundtrip",
+    "origin": "JFK",
+    "destination": "LHR",
+    "date": "2026-03-27",
+    "return_date": "2026-04-03",
+    "lang": "en-GB",
+    "currency": "GBP"
+  },
+  {
+    "case_id": "transatl_sfo_cdg_roundtrip",
+    "origin": "SFO",
+    "destination": "CDG",
+    "date": "2026-03-28",
+    "return_date": "2026-04-05",
+    "lang": "fr-FR",
+    "currency": "EUR"
+  },
+  {
+    "case_id": "asia_hnd_icn_oneway",
+    "origin": "HND",
+    "destination": "ICN",
+    "date": "2026-03-29",
+    "lang": "ko-KR",
+    "currency": "KRW"
+  },
+  {
+    "case_id": "europe_lhr_fra_oneway",
+    "origin": "LHR",
+    "destination": "FRA",
+    "date": "2026-03-30",
+    "lang": "en-GB",
+    "currency": "EUR"
+  }
+]

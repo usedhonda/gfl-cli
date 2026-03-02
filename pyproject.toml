@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling>=1.24.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gfl"
+version = "0.1.0"
+description = "JSON-first Google Flights CLI powered by fast-flights"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fast-flights>=2.2",
+  "typer>=0.12.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.3.0",
+]
+design = [
+  "playwright>=1.50.0",
+]
+
+[project.scripts]
+gfl = "gfl.__main__:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

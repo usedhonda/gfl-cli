@@ -1,0 +1,17 @@
+{
+  "required_field_fill_rate_cli": {
+    "min": 0.9
+  },
+  "required_field_fill_rate_browser": {
+    "min": 0.95
+  },
+  "row_signature_match_rate": {
+    "min": 0.7
+  },
+  "time_diff_p95_min": {
+    "max": 15
+  },
+  "unknown_warning_ratio": {
+    "max": 0.25
+  }
+}

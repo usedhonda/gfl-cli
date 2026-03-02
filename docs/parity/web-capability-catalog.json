@@ -1,0 +1,134 @@
+[
+  {
+    "capability_id": "search_basic_route_date",
+    "web_label": "Basic route/date search",
+    "web_control_type": "form",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "supported",
+    "mapped_flag": "--origin --destination --date",
+    "implementation_priority": "P0",
+    "notes": "Core capability"
+  },
+  {
+    "capability_id": "search_round_trip",
+    "web_label": "Round-trip selection",
+    "web_control_type": "toggle",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "supported",
+    "mapped_flag": "--trip round-trip --return-date",
+    "implementation_priority": "P0",
+    "notes": "Supported for round-trip"
+  },
+  {
+    "capability_id": "search_multi_city",
+    "web_label": "Multi-city itinerary",
+    "web_control_type": "trip-mode",
+    "scope": "search",
+    "cli_status": "unsupported",
+    "backend_status": "partial",
+    "mapped_flag": "--trip multi-city",
+    "implementation_priority": "P2",
+    "notes": "Currently returns INVALID_INPUT"
+  },
+  {
+    "capability_id": "filter_max_stops",
+    "web_label": "Stops filter",
+    "web_control_type": "filter",
+    "scope": "search+calendar",
+    "cli_status": "supported",
+    "backend_status": "supported",
+    "mapped_flag": "--max-stops",
+    "implementation_priority": "P1",
+    "notes": "Validated in CLI"
+  },
+  {
+    "capability_id": "filter_airline",
+    "web_label": "Airline include filter",
+    "web_control_type": "filter",
+    "scope": "search+calendar",
+    "cli_status": "supported",
+    "backend_status": "partial",
+    "mapped_flag": "--airline",
+    "implementation_priority": "P1",
+    "notes": "Best-effort mapping by keywords"
+  },
+  {
+    "capability_id": "filter_departure_window",
+    "web_label": "Departure time window",
+    "web_control_type": "slider",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "partial",
+    "mapped_flag": "--depart-after --depart-before",
+    "implementation_priority": "P1",
+    "notes": "Depends on text parse quality"
+  },
+  {
+    "capability_id": "filter_arrival_window",
+    "web_label": "Arrival time window",
+    "web_control_type": "slider",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "partial",
+    "mapped_flag": "--arrive-after --arrive-before",
+    "implementation_priority": "P1",
+    "notes": "Depends on text parse quality"
+  },
+  {
+    "capability_id": "filter_max_price",
+    "web_label": "Price cap",
+    "web_control_type": "slider",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "partial",
+    "mapped_flag": "--max-price",
+    "implementation_priority": "P1",
+    "notes": "Works when numeric price extracted"
+  },
+  {
+    "capability_id": "filter_max_duration",
+    "web_label": "Duration cap",
+    "web_control_type": "slider",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "partial",
+    "mapped_flag": "--max-duration-min",
+    "implementation_priority": "P1",
+    "notes": "Works when duration parse succeeds"
+  },
+  {
+    "capability_id": "sort_best_cheapest",
+    "web_label": "Sort by best/cheapest",
+    "web_control_type": "sort",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "partial",
+    "mapped_flag": "--sort best|cheapest",
+    "implementation_priority": "P1",
+    "notes": "Cheapest sorting implemented on normalized rows"
+  },
+  {
+    "capability_id": "calendar_price_grid",
+    "web_label": "Date grid / price graph",
+    "web_control_type": "calendar",
+    "scope": "calendar",
+    "cli_status": "partial",
+    "backend_status": "partial",
+    "mapped_flag": "--view date-grid|price-graph",
+    "implementation_priority": "P1",
+    "notes": "View reflected as warning marker"
+  },
+  {
+    "capability_id": "bags_and_change_policies",
+    "web_label": "Bags/change policy",
+    "web_control_type": "details",
+    "scope": "search",
+    "cli_status": "unsupported",
+    "backend_status": "backend_blocked",
+    "mapped_flag": null,
+    "implementation_priority": "P3",
+    "notes": "Not exposed by current backend mapping"
+  }
+]
