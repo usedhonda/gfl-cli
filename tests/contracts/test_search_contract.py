@@ -386,6 +386,30 @@ def test_search_airline_filter_matches_jl_with_japanese_airline_text(monkeypatch
     assert flights[0]["airline"] == "日本航空 (JAL)"
 
 
+def test_no_flights_found_maps_to_upstream_unavailable(monkeypatch):
+    """RuntimeError('No flights found') must map to UPSTREAM_UNAVAILABLE, not UPSTREAM_FORMAT_CHANGED."""
+
+    def _raise(_query):
+        raise RuntimeError("No flights found: SFO to LAX")
+
+    monkeypatch.setattr(
+        "gfl.adapters.fast_flights.client.parse_response",
+        _raise,
+    )
+    # Stub the HTTP layer so _request_once reaches parse_response.
+    _fake_response = type("R", (), {"status_code": 200, "text": ""})()
+    monkeypatch.setattr(
+        "gfl.adapters.fast_flights.client.Client.get",
+        lambda *_a, **_kw: _fake_response,
+    )
+
+    result = runner.invoke(app, _base_args())
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "UPSTREAM_UNAVAILABLE"
+
+
 def test_search_sort_cheapest_reorders_and_reranks(monkeypatch):
     monkeypatch.setattr(
         ff_client,

@@ -29,14 +29,14 @@ _AIRLINE_CODE_KEYWORDS: dict[str, tuple[str, ...]] = {
     "LH": ("lufthansa",),
     "KL": ("klm",),
     "IB": ("iberia",),
-    "EK": ("emirates",),
-    "QR": ("qatar",),
-    "TK": ("turkish",),
-    "SQ": ("singapore",),
-    "CX": ("cathay",),
-    "QF": ("qantas",),
-    "KE": ("korean air",),
-    "OZ": ("asiana",),
+    "EK": ("エミレーツ", "emirates"),
+    "QR": ("カタール", "qatar"),
+    "TK": ("ターキッシュ", "turkish"),
+    "SQ": ("シンガポール航空", "singapore"),
+    "CX": ("キャセイ", "cathay"),
+    "QF": ("カンタス", "qantas"),
+    "KE": ("大韓航空", "korean air"),
+    "OZ": ("アシアナ", "asiana"),
 }
 
 
