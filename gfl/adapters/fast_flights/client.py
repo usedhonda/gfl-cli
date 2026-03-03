@@ -61,6 +61,10 @@ def _looks_like_timeout(exc: Exception) -> bool:
     return "timed out" in text or "timeout" in text
 
 
+def _is_no_flights_runtime_error(exc: RuntimeError) -> bool:
+    return "no flights found" in str(exc).lower()
+
+
 def _backoff_seconds(attempt_index: int) -> float:
     return min(0.25 * (2**attempt_index), 2.0)
 
@@ -213,8 +217,8 @@ def _request_once(query: SearchQuery) -> ProviderResponse:
     try:
         parsed = parse_response(response)
     except RuntimeError as exc:
-        if query.trip == "multi-city" and "No flights found" in str(exc):
-            raise UpstreamUnavailableError("multi-city results unavailable from upstream source") from exc
+        if _is_no_flights_runtime_error(exc):
+            raise UpstreamUnavailableError("no flights found from upstream source") from exc
         raise UpstreamFormatChangedError(str(exc)) from exc
     except Exception as exc:
         raise UpstreamFormatChangedError(f"provider parse failed: {exc}") from exc

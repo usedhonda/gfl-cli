@@ -272,6 +272,120 @@ def test_search_locale_currency_propagation(monkeypatch):
     assert payload["query"]["currency"] == "JPY"
 
 
+def test_search_airline_filter_matches_nh_with_japanese_airline_text(monkeypatch):
+    monkeypatch.setattr(
+        ff_client,
+        "search_flights",
+        lambda _query: ff_client.ProviderResponse(
+            current_price="typical",
+            warnings=[],
+            flights=[
+                {
+                    "rank": 1,
+                    "is_best": True,
+                    "airline": "全日本空輸 (ANA)",
+                    "departure": "8:00 AM",
+                    "arrival": "9:00 AM",
+                    "arrival_time_ahead": "",
+                    "duration": "1 hr",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "¥99000", "amount": 99000, "currency": "JPY"},
+                },
+                {
+                    "rank": 2,
+                    "is_best": False,
+                    "airline": "日本航空 (JAL)",
+                    "departure": "10:00 AM",
+                    "arrival": "11:00 AM",
+                    "arrival_time_ahead": "",
+                    "duration": "1 hr",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "¥101000", "amount": 101000, "currency": "JPY"},
+                },
+            ],
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        _base_args()
+        + [
+            "--airline",
+            "NH",
+            "--lang",
+            "ja-JP",
+            "--currency",
+            "JPY",
+        ],
+    )
+    assert result.exit_code == 0
+
+    payload = json.loads(result.stdout)
+    flights = payload["results"][0]["flights"]
+    assert len(flights) == 1
+    assert payload["results"][0]["flight_count"] == 1
+    assert flights[0]["airline"] == "全日本空輸 (ANA)"
+
+
+def test_search_airline_filter_matches_jl_with_japanese_airline_text(monkeypatch):
+    monkeypatch.setattr(
+        ff_client,
+        "search_flights",
+        lambda _query: ff_client.ProviderResponse(
+            current_price="typical",
+            warnings=[],
+            flights=[
+                {
+                    "rank": 1,
+                    "is_best": True,
+                    "airline": "全日本空輸 (ANA)",
+                    "departure": "8:00 AM",
+                    "arrival": "9:00 AM",
+                    "arrival_time_ahead": "",
+                    "duration": "1 hr",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "¥99000", "amount": 99000, "currency": "JPY"},
+                },
+                {
+                    "rank": 2,
+                    "is_best": False,
+                    "airline": "日本航空 (JAL)",
+                    "departure": "10:00 AM",
+                    "arrival": "11:00 AM",
+                    "arrival_time_ahead": "",
+                    "duration": "1 hr",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "¥101000", "amount": 101000, "currency": "JPY"},
+                },
+            ],
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        _base_args()
+        + [
+            "--airline",
+            "JL",
+            "--lang",
+            "ja-JP",
+            "--currency",
+            "JPY",
+        ],
+    )
+    assert result.exit_code == 0
+
+    payload = json.loads(result.stdout)
+    flights = payload["results"][0]["flights"]
+    assert len(flights) == 1
+    assert payload["results"][0]["flight_count"] == 1
+    assert flights[0]["airline"] == "日本航空 (JAL)"
+
+
 def test_search_sort_cheapest_reorders_and_reranks(monkeypatch):
     monkeypatch.setattr(
         ff_client,
