@@ -14,7 +14,6 @@
 - date:
 - return-date:
 - segments (`FROM:TO:YYYY-MM-DD`, repeatable):
-- lang:
 - currency:
 
 ## Optional Filters
@@ -33,4 +32,4 @@
 - required fields by trip mode are complete
 - date format is `YYYY-MM-DD`
 - segment format is `FROM:TO:YYYY-MM-DD` when multi-city
-- currency and language are explicit when required
+- currency is explicit when required

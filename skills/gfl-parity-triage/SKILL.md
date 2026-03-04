@@ -39,15 +39,15 @@ Map `error.code` to first action:
 - `RATE_LIMITED`: cooldown and retry
 - `INTERNAL_ERROR`: capture payload and escalate
 
-## Parity Evidence Commands
+## Triage Commands
 
 ```bash
-uv run --extra design python scripts/probe_browser_cli_gap.py \
-  --matrix-file docs/parity/matrix.json \
-  --screenshot \
-  --dom-snapshot \
-  --save-html \
-  --output artifacts/parity/latest-matrix.json
+uv run gfl search \
+  --origin SFO \
+  --destination LAX \
+  --date 2026-03-23 \
+  --currency USD \
+  --format json
 
 uv run python scripts/parity_gate.py \
   --input artifacts/parity/latest-matrix.json \

@@ -8,7 +8,6 @@ import typer
 
 from gfl.cli.commands._common import (
     DEFAULT_CURRENCY,
-    DEFAULT_LANG,
     emit_payload,
     resolve_output_format,
 )
@@ -46,7 +45,6 @@ def register(app: typer.Typer) -> None:
         ] = "economy",
         max_stops: Annotated[int | None, typer.Option("--max-stops")] = None,
         airline: Annotated[list[str], typer.Option("--airline")] = [],
-        lang: Annotated[str | None, typer.Option("--lang")] = DEFAULT_LANG,
         currency: Annotated[str | None, typer.Option("--currency")] = DEFAULT_CURRENCY,
         timeout_sec: Annotated[int, typer.Option("--timeout-sec")] = 30,
         retries: Annotated[int, typer.Option("--retries")] = 2,
@@ -65,7 +63,6 @@ def register(app: typer.Typer) -> None:
                 seat=seat,
                 max_stops=max_stops,
                 airline=tuple(airline),
-                lang=lang,
                 currency=currency,
                 timeout_sec=timeout_sec,
                 retries=retries,

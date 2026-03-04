@@ -9,36 +9,20 @@ uv sync --extra dev --extra design
 uv run python -m playwright install chromium
 ```
 
-## 2. Baseline probe (single route)
+## 2. Baseline capture (single route)
 
 ```bash
-uv run --extra design python scripts/probe_browser_cli_gap.py \
-  --origin HND \
-  --destination SIN \
-  --date 2026-04-05 \
-  --lang ja-JP \
-  --currency JPY \
-  --dom-snapshot \
-  --screenshot \
-  --output artifacts/parity/latest-single.json
+uv run python -m playwright codegen \
+  "https://www.google.com/travel/flights?q=Flights%20from%20HND%20to%20SIN%20on%202026-04-05&hl=en-US&curr=JPY"
 ```
 
 Evidence generated:
-- `artifacts/parity/latest-single.json` (browser/CLI comparison)
-- `artifacts/parity/screenshots/*.png` (if `--screenshot`)
-- `artifacts/parity/dom/*.html` (if `--dom-snapshot`)
+- inspector steps and selectors from Playwright
+- manual snapshots saved under `artifacts/parity/` as needed
 
-## 3. Matrix probe (regression sweep)
+## 3. Regression sweep (multi-route)
 
-```bash
-uv run --extra design python scripts/probe_browser_cli_gap.py \
-  --matrix-file docs/parity/matrix.json \
-  --dom-snapshot \
-  --screenshot \
-  --output artifacts/parity/latest-matrix.json
-```
-
-Then enforce thresholds:
+Capture representative routes manually, then enforce thresholds:
 
 ```bash
 uv run python scripts/parity_gate.py \
@@ -69,7 +53,7 @@ uv run python scripts/parity_gate.py \
 1. Update extraction in `fast-flights` first (`fast_flights/core.py`).
 2. Map new fields in `gfl/adapters/fast_flights/mapper.py`.
 3. Add/update contract tests in `tests/contracts/`.
-4. Re-run matrix probe and parity gate.
+4. Re-run manual regression sweep and parity gate.
 5. Commit with captured evidence paths in message/log.
 
 ## 6. Non-negotiable rules

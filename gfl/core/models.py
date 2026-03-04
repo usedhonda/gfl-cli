@@ -41,7 +41,6 @@ class SearchQueryInput:
     children: int
     infants_in_seat: int
     infants_on_lap: int
-    lang: str | None
     currency: str | None
     timeout_sec: int
     retries: int
@@ -69,7 +68,6 @@ class SearchQuery:
     children: int
     infants_in_seat: int
     infants_on_lap: int
-    lang: str
     currency: str
     timeout_sec: int
     retries: int
@@ -96,7 +94,6 @@ class SearchQuery:
             "children": self.children,
             "infants_in_seat": self.infants_in_seat,
             "infants_on_lap": self.infants_on_lap,
-            "lang": self.lang,
             "currency": self.currency,
             "timeout_sec": self.timeout_sec,
             "retries": self.retries,
@@ -122,7 +119,6 @@ class CalendarQueryInput:
     seat: str
     max_stops: int | None
     airline: tuple[str, ...]
-    lang: str | None
     currency: str | None
     timeout_sec: int
     retries: int
@@ -140,7 +136,6 @@ class CalendarQuery:
     seat: SeatType
     max_stops: int | None
     airline: tuple[str, ...]
-    lang: str
     currency: str
     timeout_sec: int
     retries: int
@@ -157,7 +152,6 @@ class CalendarQuery:
             "seat": self.seat,
             "max_stops": self.max_stops,
             "airline": list(self.airline),
-            "lang": self.lang,
             "currency": self.currency,
             "timeout_sec": self.timeout_sec,
             "retries": self.retries,

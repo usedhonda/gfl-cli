@@ -1,4 +1,4 @@
-# SPEC.md - gfl v0.1 (Phase 1)
+# SPEC.md - gfl v1.0 (Phase 1)
 
 ## 1. Summary
 `gfl` is a JSON-first Google Flights CLI built on top of `fast-flights`.
@@ -6,7 +6,7 @@ Primary consumer is automation (OpenClaw wrappers, schedulers, bots). Human term
 
 ## 2. Goals
 - Stable machine-readable output for every command.
-- Explicit locale controls (`lang`, `currency`).
+- Explicit market control (`currency`).
 - Predictable failure semantics with fixed error code taxonomy.
 - Minimal command surface with high reliability.
 
@@ -37,7 +37,6 @@ Optional arguments:
 - `--children <int>` default `0`
 - `--infants-in-seat <int>` default `0`
 - `--infants-on-lap <int>` default `0`
-- `--lang <BCP47>` default provider default
 - `--currency <ISO4217>` default provider default
 - `--timeout-sec <int>` default `30`
 - `--retries <int>` default `2`
@@ -103,7 +102,7 @@ Returns CLI and backend version metadata.
 }
 ```
 
-## 6. Error Code Registry (v0.1)
+## 6. Error Code Registry (v1.0)
 Allowed codes:
 - `INVALID_INPUT`
 - `UPSTREAM_FORMAT_CHANGED`
@@ -151,11 +150,11 @@ Minimum test matrix:
 9. `--format human` smoke test
 10. `version` contract test
 
-## 11. Release Criteria for v0.1
+## 11. Release Criteria for v1.0
 - Contract tests pass.
 - Manual smoke checks for:
-  - `--lang ja-JP --currency JPY`
-  - `--lang en-US --currency USD`
+  - `--currency JPY`
+  - `--currency USD`
 - README includes install, examples, output schema, and error table.
 
 ## 12. Change Control

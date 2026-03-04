@@ -47,7 +47,6 @@ def _query(trip: str) -> SearchQuery:
         children=0,
         infants_in_seat=0,
         infants_on_lap=0,
-        lang="en-US",
         currency="USD",
         timeout_sec=30,
         retries=0,

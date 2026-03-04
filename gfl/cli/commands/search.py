@@ -8,7 +8,6 @@ import typer
 
 from gfl.cli.commands._common import (
     DEFAULT_CURRENCY,
-    DEFAULT_LANG,
     emit_payload,
     resolve_output_format,
 )
@@ -73,7 +72,6 @@ def register(app: typer.Typer) -> None:
         children: Annotated[int, typer.Option("--children")] = 0,
         infants_in_seat: Annotated[int, typer.Option("--infants-in-seat")] = 0,
         infants_on_lap: Annotated[int, typer.Option("--infants-on-lap")] = 0,
-        lang: Annotated[str | None, typer.Option("--lang")] = DEFAULT_LANG,
         currency: Annotated[str | None, typer.Option("--currency")] = DEFAULT_CURRENCY,
         timeout_sec: Annotated[int, typer.Option("--timeout-sec")] = 30,
         retries: Annotated[int, typer.Option("--retries")] = 2,
@@ -108,7 +106,6 @@ def register(app: typer.Typer) -> None:
                 children=children,
                 infants_in_seat=infants_in_seat,
                 infants_on_lap=infants_on_lap,
-                lang=lang,
                 currency=currency,
                 timeout_sec=timeout_sec,
                 retries=retries,

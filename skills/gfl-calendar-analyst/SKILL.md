@@ -36,7 +36,7 @@ Collect and confirm:
 - `--start-date --end-date`
 - optional `--trip-duration --is-round-trip`
 - `--view date-grid|price-graph`
-- locale and currency
+- currency
 
 ## Execution Command (price-graph)
 
@@ -47,7 +47,6 @@ uv run gfl calendar \
   --start-date 2026-03-23 \
   --end-date 2026-03-25 \
   --view price-graph \
-  --lang en-US \
   --currency USD \
   --format json
 ```

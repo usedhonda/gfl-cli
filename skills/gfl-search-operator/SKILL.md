@@ -33,7 +33,6 @@ Language resolution order:
 Collect and confirm:
 
 - trip mode: `one-way` | `round-trip` | `multi-city`
-- locale: `--lang`
 - currency: `--currency`
 - seat, passenger counts, and filters if requested
 
@@ -52,7 +51,6 @@ uv run gfl search \
   --origin SFO \
   --destination LAX \
   --date 2026-03-23 \
-  --lang en-US \
   --currency USD \
   --format json
 ```
@@ -66,7 +64,6 @@ uv run gfl search \
   --date 2026-03-27 \
   --trip round-trip \
   --return-date 2026-04-02 \
-  --lang en-US \
   --currency USD \
   --format json
 ```
@@ -78,7 +75,6 @@ uv run gfl search \
   --trip multi-city \
   --segment SFO:NRT:2026-03-23 \
   --segment NRT:CTS:2026-03-26 \
-  --lang en-US \
   --currency USD \
   --format json
 ```

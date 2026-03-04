@@ -15,7 +15,6 @@
 - view (`date-grid|price-graph`):
 - trip-duration:
 - is-round-trip:
-- lang:
 - currency:
 
 ## Validation Checklist

@@ -19,7 +19,7 @@ Language resolution order:
 - `gfl search`
 - `gfl calendar`
 - `gfl version`
-- `--origin --destination --date --return-date --segment --lang --currency --view`
+- `--origin --destination --date --return-date --segment --currency --view`
 - `status`
 - `request_id`
 - `query`

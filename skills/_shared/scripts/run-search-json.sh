@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: $0 <gfl search args...>" >&2
-  echo "Example: $0 --origin SFO --destination LAX --date 2026-03-23 --lang en-US --currency USD" >&2
+  echo "Example: $0 --origin SFO --destination LAX --date 2026-03-23 --currency USD" >&2
   exit 2
 fi
 

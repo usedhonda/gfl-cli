@@ -7,7 +7,6 @@ from typing import Any, Callable
 
 import typer
 
-DEFAULT_LANG: str | None = None
 DEFAULT_CURRENCY: str | None = None
 
 

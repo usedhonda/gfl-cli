@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: $0 <gfl calendar args...>" >&2
-  echo "Example: $0 --origin SFO --destination LAX --start-date 2026-03-23 --end-date 2026-03-25 --lang en-US --currency USD" >&2
+  echo "Example: $0 --origin SFO --destination LAX --start-date 2026-03-23 --end-date 2026-03-25 --currency USD" >&2
   exit 2
 fi
 

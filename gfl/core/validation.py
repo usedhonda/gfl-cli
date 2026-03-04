@@ -14,7 +14,6 @@ from gfl.core.models import (
 )
 
 IATA_RE = re.compile(r"^[A-Z]{3}$")
-LANG_RE = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
 CURRENCY_RE = re.compile(r"^[A-Z]{3}$")
 AIRLINE_RE = re.compile(r"^[A-Z0-9]{2,3}$")
 TIME_HHMM_RE = re.compile(r"^(?P<hour>[01]\d|2[0-3]):(?P<minute>[0-5]\d)$")
@@ -60,15 +59,6 @@ def _require_text(raw: str | None, field: str) -> str:
     if raw is None or not raw.strip():
         raise InputValidationError(f"{field} is required")
     return raw.strip()
-
-
-def _normalize_lang(raw: str | None) -> str:
-    if raw is None or not raw.strip():
-        return "en"
-    value = raw.strip()
-    if not LANG_RE.fullmatch(value):
-        raise InputValidationError("lang must be a valid BCP47 tag")
-    return value
 
 
 def _normalize_currency(raw: str | None) -> str:
@@ -224,7 +214,6 @@ def validate_search_input(raw: SearchQueryInput) -> SearchQuery:
         children=raw.children,
         infants_in_seat=raw.infants_in_seat,
         infants_on_lap=raw.infants_on_lap,
-        lang=_normalize_lang(raw.lang),
         currency=_normalize_currency(raw.currency),
         timeout_sec=raw.timeout_sec,
         retries=raw.retries,
@@ -273,7 +262,6 @@ def validate_calendar_input(raw: CalendarQueryInput) -> CalendarQuery:
         seat=seat,
         max_stops=raw.max_stops,
         airline=_normalize_airlines(raw.airline),
-        lang=_normalize_lang(raw.lang),
         currency=_normalize_currency(raw.currency),
         timeout_sec=raw.timeout_sec,
         retries=raw.retries,

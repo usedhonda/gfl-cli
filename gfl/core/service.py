@@ -116,10 +116,6 @@ def _normalize_search_result(
     ]
 
 
-def _should_locale_fallback(*, query: SearchQuery, flights: list[dict[str, object]]) -> bool:
-    return query.lang.lower().startswith("ja") and query.max_stops == 0 and not flights
-
-
 def _search_with_postprocess(
     query: SearchQuery,
 ) -> tuple[ff_client.ProviderResponse, list[dict[str, object]], list[str]]:
@@ -129,23 +125,6 @@ def _search_with_postprocess(
         query=query,
     )
     warnings = _merge_warnings(provider_response.warnings, postprocess_warnings)
-
-    if _should_locale_fallback(query=query, flights=processed_flights):
-        fallback_query = replace(query, lang="en-US")
-        fallback_response = ff_client.search_flights(fallback_query)
-        fallback_flights, fallback_postprocess_warnings = apply_search_postprocess(
-            flights=fallback_response.flights,
-            query=fallback_query,
-        )
-        if fallback_flights:
-            provider_response = fallback_response
-            processed_flights = fallback_flights
-            warnings = _merge_warnings(
-                warnings,
-                fallback_response.warnings,
-                fallback_postprocess_warnings,
-                ["locale.fallback=ja->en-US"],
-            )
 
     return provider_response, processed_flights, warnings
 
@@ -296,7 +275,6 @@ def _calendar_search_query(
         children=0,
         infants_in_seat=0,
         infants_on_lap=0,
-        lang=calendar_query.lang,
         currency=calendar_query.currency,
         timeout_sec=calendar_query.timeout_sec,
         retries=calendar_query.retries,

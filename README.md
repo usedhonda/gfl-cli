@@ -21,7 +21,6 @@ uv run gfl search \
   --origin SFO \
   --destination LAX \
   --date 2026-03-23 \
-  --lang en-US \
   --currency USD
 ```
 
@@ -30,7 +29,6 @@ uv run gfl search \
   --trip multi-city \
   --segment SFO:NRT:2026-03-23 \
   --segment NRT:CTS:2026-03-26 \
-  --lang en-US \
   --currency USD
 ```
 
@@ -60,9 +58,9 @@ All commands default to JSON on stdout with fixed top-level fields:
 
 Use `--format human` or `--human` for opt-in human-readable output.
 
-## Locale/Currency Behavior
+## Language/Currency Behavior
 
-- `--lang` omitted: query uses `en`
+- runtime provider language is fixed to `en-US`
 - `--currency` omitted: query uses empty string (`""`) and provider default currency
 - any provided `--currency` is normalized to uppercase ISO4217 (example: `jpy` -> `JPY`)
 
@@ -122,22 +120,11 @@ Summary:
 
 - Playwright is mandatory for development-time parser/design validation.
 - Playwright is prohibited in production runtime path (`gfl/`).
-- Use development extras only when running design-validation tooling.
+- `gfl` runtime verification should use stable JSON command outputs.
 
 ```bash
-uv sync --extra dev --extra design
-uv run python scripts/probe_browser_cli_gap.py --origin SFO --destination LAX --date 2026-03-23
-```
-
-Matrix + gate example:
-
-```bash
-uv run --extra design python scripts/probe_browser_cli_gap.py \
-  --matrix-file docs/parity/matrix.json \
-  --limit 3 \
-  --screenshot \
-  --dom-snapshot \
-  --output artifacts/parity/latest-matrix.json
+uv sync --extra dev
+uv run gfl search --origin SFO --destination LAX --date 2026-03-23 --currency USD --format json
 
 uv run python scripts/parity_gate.py \
   --input artifacts/parity/latest-matrix.json \

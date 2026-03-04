@@ -85,7 +85,7 @@ def test_calendar_invalid_range_returns_invalid_input():
     assert payload["error"]["code"] == "INVALID_INPUT"
 
 
-def test_calendar_locale_currency_and_view_warning(monkeypatch):
+def test_calendar_currency_and_view_warning(monkeypatch):
     monkeypatch.setattr(
         ff_client,
         "search_flights",
@@ -113,8 +113,6 @@ def test_calendar_locale_currency_and_view_warning(monkeypatch):
         app,
         _calendar_args()
         + [
-            "--lang",
-            "ja-JP",
             "--currency",
             "JPY",
             "--view",
@@ -124,7 +122,6 @@ def test_calendar_locale_currency_and_view_warning(monkeypatch):
     assert result.exit_code == 0
 
     payload = json.loads(result.stdout)
-    assert payload["query"]["lang"] == "ja-JP"
     assert payload["query"]["currency"] == "JPY"
     assert payload["query"]["view"] == "price-graph"
     assert "calendar.view=price-graph" in payload["meta"]["warnings"]

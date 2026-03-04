@@ -287,15 +287,13 @@ def test_search_upstream_unavailable(monkeypatch):
     assert payload["error"]["code"] == "UPSTREAM_UNAVAILABLE"
 
 
-def test_search_locale_currency_propagation(monkeypatch):
+def test_search_currency_propagation(monkeypatch):
     monkeypatch.setattr(ff_client, "search_flights", lambda _query: _fake_provider_response())
 
     result = runner.invoke(
         app,
         _base_args()
         + [
-            "--lang",
-            "ja-JP",
             "--currency",
             "JPY",
         ],
@@ -303,51 +301,18 @@ def test_search_locale_currency_propagation(monkeypatch):
     assert result.exit_code == 0
 
     payload = json.loads(result.stdout)
-    assert payload["query"]["lang"] == "ja-JP"
     assert payload["query"]["currency"] == "JPY"
 
 
-def test_search_locale_fallback_from_ja_to_en_when_max_stops_filters_all(monkeypatch):
+def test_search_does_not_retry_with_locale_fallback_when_filters_return_empty(monkeypatch):
     calls = []
 
     def _fake_search(query):
-        calls.append(query.lang)
-        if query.lang == "ja-JP":
-            return ff_client.ProviderResponse(
-                current_price="typical",
-                warnings=[],
-                flights=[
-                    {
-                        "rank": 1,
-                        "is_best": True,
-                        "airline": "日本航空 (JAL)",
-                        "departure": "4月5日(日)、11:40",
-                        "arrival": "4月5日(日)、17:45",
-                        "arrival_time_ahead": "",
-                        "duration": "7 時間 5 分",
-                        "stops": "Unknown",
-                        "delay": None,
-                        "price": {"text": "¥149120", "amount": 149120, "currency": "JPY"},
-                    }
-                ],
-            )
+        calls.append((query.origin, query.destination, query.date.isoformat()))
         return ff_client.ProviderResponse(
             current_price="typical",
             warnings=[],
-            flights=[
-                {
-                    "rank": 1,
-                    "is_best": True,
-                    "airline": "JAL",
-                    "departure": "11:40 AM",
-                    "arrival": "5:45 PM",
-                    "arrival_time_ahead": "",
-                    "duration": "7 hr 5 min",
-                    "stops": 0,
-                    "delay": None,
-                    "price": {"text": "$100", "amount": 100, "currency": "USD"},
-                }
-            ],
+            flights=[],
         )
 
     monkeypatch.setattr(ff_client, "search_flights", _fake_search)
@@ -355,8 +320,6 @@ def test_search_locale_fallback_from_ja_to_en_when_max_stops_filters_all(monkeyp
         app,
         _base_args()
         + [
-            "--lang",
-            "ja-JP",
             "--currency",
             "JPY",
             "--max-stops",
@@ -365,12 +328,12 @@ def test_search_locale_fallback_from_ja_to_en_when_max_stops_filters_all(monkeyp
     )
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
-    assert calls == ["ja-JP", "en-US"]
-    assert payload["results"][0]["flight_count"] == 1
-    assert "locale.fallback=ja->en-US" in payload["meta"]["warnings"]
+    assert calls == [("SFO", "LAX", "2026-03-23")]
+    assert payload["results"][0]["flight_count"] == 0
+    assert "locale.fallback=ja->en-US" not in payload["meta"]["warnings"]
 
 
-def test_search_airline_filter_matches_nh_with_japanese_airline_text(monkeypatch):
+def test_search_airline_filter_matches_nh_with_english_airline_text(monkeypatch):
     monkeypatch.setattr(
         ff_client,
         "search_flights",
@@ -381,7 +344,7 @@ def test_search_airline_filter_matches_nh_with_japanese_airline_text(monkeypatch
                 {
                     "rank": 1,
                     "is_best": True,
-                    "airline": "全日本空輸 (ANA)",
+                    "airline": "All Nippon Airways (ANA)",
                     "departure": "8:00 AM",
                     "arrival": "9:00 AM",
                     "arrival_time_ahead": "",
@@ -393,7 +356,7 @@ def test_search_airline_filter_matches_nh_with_japanese_airline_text(monkeypatch
                 {
                     "rank": 2,
                     "is_best": False,
-                    "airline": "日本航空 (JAL)",
+                    "airline": "Japan Airlines (JAL)",
                     "departure": "10:00 AM",
                     "arrival": "11:00 AM",
                     "arrival_time_ahead": "",
@@ -412,8 +375,6 @@ def test_search_airline_filter_matches_nh_with_japanese_airline_text(monkeypatch
         + [
             "--airline",
             "NH",
-            "--lang",
-            "ja-JP",
             "--currency",
             "JPY",
         ],
@@ -424,10 +385,10 @@ def test_search_airline_filter_matches_nh_with_japanese_airline_text(monkeypatch
     flights = payload["results"][0]["flights"]
     assert len(flights) == 1
     assert payload["results"][0]["flight_count"] == 1
-    assert flights[0]["airline"] == "全日本空輸 (ANA)"
+    assert flights[0]["airline"] == "All Nippon Airways (ANA)"
 
 
-def test_search_airline_filter_matches_jl_with_japanese_airline_text(monkeypatch):
+def test_search_airline_filter_matches_jl_with_english_airline_text(monkeypatch):
     monkeypatch.setattr(
         ff_client,
         "search_flights",
@@ -438,7 +399,7 @@ def test_search_airline_filter_matches_jl_with_japanese_airline_text(monkeypatch
                 {
                     "rank": 1,
                     "is_best": True,
-                    "airline": "全日本空輸 (ANA)",
+                    "airline": "All Nippon Airways (ANA)",
                     "departure": "8:00 AM",
                     "arrival": "9:00 AM",
                     "arrival_time_ahead": "",
@@ -450,7 +411,7 @@ def test_search_airline_filter_matches_jl_with_japanese_airline_text(monkeypatch
                 {
                     "rank": 2,
                     "is_best": False,
-                    "airline": "日本航空 (JAL)",
+                    "airline": "Japan Airlines (JAL)",
                     "departure": "10:00 AM",
                     "arrival": "11:00 AM",
                     "arrival_time_ahead": "",
@@ -469,8 +430,6 @@ def test_search_airline_filter_matches_jl_with_japanese_airline_text(monkeypatch
         + [
             "--airline",
             "JL",
-            "--lang",
-            "ja-JP",
             "--currency",
             "JPY",
         ],
@@ -481,7 +440,7 @@ def test_search_airline_filter_matches_jl_with_japanese_airline_text(monkeypatch
     flights = payload["results"][0]["flights"]
     assert len(flights) == 1
     assert payload["results"][0]["flight_count"] == 1
-    assert flights[0]["airline"] == "日本航空 (JAL)"
+    assert flights[0]["airline"] == "Japan Airlines (JAL)"
 
 
 def test_no_flights_found_maps_to_upstream_unavailable(monkeypatch):

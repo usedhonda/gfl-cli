@@ -26,20 +26,13 @@ Minimum validation:
 Use:
 
 ```bash
-uv sync --extra dev --extra design
-uv run python scripts/probe_browser_cli_gap.py --origin SFO --destination LAX --date 2026-03-23
+uv sync --extra dev
+uv run gfl search --origin SFO --destination LAX --date 2026-03-23 --currency USD --format json
 ```
 
-Matrix probe and parity gate:
+Parity gate:
 
 ```bash
-uv run --extra design python scripts/probe_browser_cli_gap.py \
-  --matrix-file docs/parity/matrix.json \
-  --limit 3 \
-  --screenshot \
-  --dom-snapshot \
-  --output artifacts/parity/latest-matrix.json
-
 uv run python scripts/parity_gate.py \
   --input artifacts/parity/latest-matrix.json \
   --thresholds docs/parity/thresholds.json
