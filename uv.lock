@@ -34,8 +34,8 @@ wheels = [
 
 [[package]]
 name = "fast-flights"
-version = "3.0.0"
-source = { git = "https://github.com/usedhonda/fast-flights.git?rev=b468814fac705c81536398905636346b067d1675#b468814fac705c81536398905636346b067d1675" }
+version = "3.1.0"
+source = { git = "https://github.com/usedhonda/fast-flights.git?rev=8441f7b9991773831aadaaad395f4e6c2bfa9a57#8441f7b9991773831aadaaad395f4e6c2bfa9a57" }
 dependencies = [
     { name = "primp" },
     { name = "protobuf" },
@@ -44,7 +44,7 @@ dependencies = [
 
 [[package]]
 name = "gfl"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "fast-flights" },
@@ -62,7 +62,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fast-flights", git = "https://github.com/usedhonda/fast-flights.git?rev=b468814fac705c81536398905636346b067d1675" },
+    { name = "fast-flights", git = "https://github.com/usedhonda/fast-flights.git?rev=8441f7b9991773831aadaaad395f4e6c2bfa9a57" },
     { name = "playwright", marker = "extra == 'design'", specifier = ">=1.50.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3.0" },
