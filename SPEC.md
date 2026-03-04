@@ -174,3 +174,19 @@ Any change to command names, output schema, or error code registry requires expl
   - `min_amount_in_range`
   - `max_amount_in_range`
   - `avg_amount_in_range`
+
+## 14. Extended Flight Metadata (Implemented)
+`results[0].flights[*]` may include the following backend-derived fields:
+- `self_transfer` (bool)
+- `emissions` object:
+  - `kg_co2e`
+  - `delta_percent`
+  - `relative_label`
+- `layovers[]` objects:
+  - `airport_code`
+  - `duration_text`
+  - `duration_min`
+- `flight_numbers[]`
+- `operated_by`
+- `aircraft`
+- `amenities[]`

@@ -74,6 +74,11 @@ Use `--format human` or `--human` for opt-in human-readable output.
   - `--depart-after/--depart-before` (`HH:MM`, 24h)
   - `--arrive-after/--arrive-before` (`HH:MM`, 24h)
   - `--max-duration-min`
+- `search` flight rows include backend metadata when available:
+  - `self_transfer`
+  - `emissions` (`kg_co2e`, `delta_percent`, `relative_label`)
+  - `layovers[]` (`airport_code`, `duration_text`, `duration_min`)
+  - `flight_numbers[]`, `operated_by`, `aircraft`, `amenities[]`
 - `search --trip multi-city` requires repeated `--segment FROM:TO:YYYY-MM-DD` (>=2)
   - current behavior is best-effort and may return `UPSTREAM_UNAVAILABLE` depending on upstream response shape
 - `calendar --view date-grid|price-graph` (default: `date-grid`)
@@ -111,6 +116,7 @@ Language resolution order used by the samples:
 ## Development Rule
 
 See [docs/development-rules.md](docs/development-rules.md).
+For the full DOM drift workflow, see [docs/playwright-dom-investigation.md](docs/playwright-dom-investigation.md).
 
 Summary:
 

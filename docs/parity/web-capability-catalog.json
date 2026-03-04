@@ -121,6 +121,39 @@
     "notes": "View reflected as warning marker and results[*].graph aggregate fields"
   },
   {
+    "capability_id": "flight_emissions_details",
+    "web_label": "Emissions details per itinerary",
+    "web_control_type": "details",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "supported",
+    "mapped_flag": "results[*].flights[*].emissions",
+    "implementation_priority": "P1",
+    "notes": "Extracted from itinerary text and/or travel impact metadata"
+  },
+  {
+    "capability_id": "flight_layover_details",
+    "web_label": "Layover airport/duration details",
+    "web_control_type": "details",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "partial",
+    "mapped_flag": "results[*].flights[*].layovers",
+    "implementation_priority": "P1",
+    "notes": "Best-effort extraction from route/aria text; locale-dependent"
+  },
+  {
+    "capability_id": "flight_numbers_and_operator",
+    "web_label": "Flight number and operating carrier",
+    "web_control_type": "details",
+    "scope": "search",
+    "cli_status": "supported",
+    "backend_status": "partial",
+    "mapped_flag": "results[*].flights[*].flight_numbers / operated_by / aircraft",
+    "implementation_priority": "P1",
+    "notes": "Flight numbers sourced from travel impact itinerary param when present"
+  },
+  {
     "capability_id": "bags_and_change_policies",
     "web_label": "Bags/change policy",
     "web_control_type": "details",

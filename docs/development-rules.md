@@ -53,3 +53,7 @@ Playwright usage is restricted to development tooling (for example `scripts/`) a
 ## Rule 3: Contract first
 
 Even when parser internals change, the JSON output contract and stable error codes must remain unchanged unless explicitly approved.
+
+## Reference
+
+- Detailed investigation flow: `docs/playwright-dom-investigation.md`

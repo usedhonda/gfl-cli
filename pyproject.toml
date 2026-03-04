@@ -9,7 +9,7 @@ description = "JSON-first Google Flights CLI powered by fast-flights"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-  "fast-flights @ git+https://github.com/usedhonda/fast-flights.git@57260459e7c5ff0b489df0a34ca68adc3917304e",
+  "fast-flights @ git+https://github.com/usedhonda/fast-flights.git@9f84f3e777da9ff5d00d253ad6e465d1b34a7bf2",
   "typer>=0.12.3",
 ]
 
