@@ -27,6 +27,13 @@ _TRIP_RE = re.compile(
 _DURATION_RE = re.compile(r"Total duration (?P<duration>.+?)\.")
 _PRICE_RE = re.compile(r"From (?P<price>[0-9][0-9,]*) ")
 _STOPS_RE = re.compile(r"(?P<stops>Nonstop|\d+ stop(?:s)?) flight with ")
+_AIRLINE_JA_RE = re.compile(r"。 (?P<airline>.+?) が運航する")
+_TRIP_JA_RE = re.compile(
+    r"[、 ](?P<dep_time>\d{1,2}:\d{2}).*?発、.*?[、 ](?P<arr_time>\d{1,2}:\d{2}).*?着"
+)
+_DURATION_JA_RE = re.compile(r"合計時間 (?P<duration>.+?)。")
+_PRICE_JA_RE = re.compile(r"合計金額 (?P<price>[0-9][0-9,]*) 円")
+_STOPS_JA_RE = re.compile(r"(?P<stops>直行便|\d+\s*か所経由|\d+\s*回乗り継ぎ)")
 
 
 class UpstreamError(RuntimeError):
@@ -72,8 +79,14 @@ def _backoff_seconds(attempt_index: int) -> float:
 def _parse_stops(value: str | None):
     if value is None:
         return None
-    if value == "Nonstop":
+    normalized = value.strip().lower()
+    if not normalized:
+        return None
+    if "nonstop" in normalized or "non-stop" in normalized or "直行" in value:
         return 0
+    digits = re.search(r"\d+", value)
+    if digits:
+        return int(digits.group(0))
     first = value.split(" ", 1)[0]
     return int(first) if first.isdigit() else None
 
@@ -86,24 +99,73 @@ def _extract_aria_fallback_details(html: str) -> list[dict[str, Any]]:
     for node in nodes:
         label = node.attributes.get("aria-label", "")
         airline_match = _AIRLINE_RE.search(label)
+        airline_ja_match = _AIRLINE_JA_RE.search(label)
         trip_match = _TRIP_RE.search(label)
+        trip_ja_match = _TRIP_JA_RE.search(label)
         duration_match = _DURATION_RE.search(label)
+        duration_ja_match = _DURATION_JA_RE.search(label)
         price_match = _PRICE_RE.search(label)
+        price_ja_match = _PRICE_JA_RE.search(label)
         stops_match = _STOPS_RE.search(label)
+        stops_ja_match = _STOPS_JA_RE.search(label)
 
         price_value = None
         if price_match:
             raw_price = price_match.group("price").replace(",", "")
             if raw_price.isdigit():
                 price_value = int(raw_price)
+        elif price_ja_match:
+            raw_price = price_ja_match.group("price").replace(",", "")
+            if raw_price.isdigit():
+                price_value = int(raw_price)
 
         details.append(
             {
-                "airline": airline_match.group("airline").strip() if airline_match else "",
-                "departure": trip_match.group("dep_time").strip() if trip_match else "",
-                "arrival": trip_match.group("arr_time").strip() if trip_match else "",
-                "duration": duration_match.group("duration").strip() if duration_match else "",
-                "stops": _parse_stops(stops_match.group("stops") if stops_match else None),
+                "airline": (
+                    airline_match.group("airline").strip()
+                    if airline_match
+                    else (
+                        airline_ja_match.group("airline").strip()
+                        if airline_ja_match
+                        else ""
+                    )
+                ),
+                "departure": (
+                    trip_match.group("dep_time").strip()
+                    if trip_match
+                    else (
+                        trip_ja_match.group("dep_time").strip()
+                        if trip_ja_match
+                        else ""
+                    )
+                ),
+                "arrival": (
+                    trip_match.group("arr_time").strip()
+                    if trip_match
+                    else (
+                        trip_ja_match.group("arr_time").strip()
+                        if trip_ja_match
+                        else ""
+                    )
+                ),
+                "duration": (
+                    duration_match.group("duration").strip()
+                    if duration_match
+                    else (
+                        duration_ja_match.group("duration").strip()
+                        if duration_ja_match
+                        else ""
+                    )
+                ),
+                "stops": _parse_stops(
+                    stops_match.group("stops")
+                    if stops_match
+                    else (
+                        stops_ja_match.group("stops")
+                        if stops_ja_match
+                        else None
+                    )
+                ),
                 "price_amount": price_value,
             }
         )

@@ -80,6 +80,41 @@ def test_search_round_trip_success_contract(monkeypatch):
     assert payload["results"][0]["trip"] == "round-trip"
 
 
+def test_search_round_trip_splits_directional_rows(monkeypatch):
+    calls = []
+
+    def _fake_search(query):
+        calls.append((query.trip, query.origin, query.destination, query.date.isoformat()))
+        return _fake_provider_response()
+
+    monkeypatch.setattr(ff_client, "search_flights", _fake_search)
+
+    result = runner.invoke(
+        app,
+        _base_args()
+        + [
+            "--trip",
+            "round-trip",
+            "--return-date",
+            "2026-03-30",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    flights = payload["results"][0]["flights"]
+    assert len(calls) == 2
+    assert calls[0][0] == "one-way"
+    assert calls[0][1] == "SFO"
+    assert calls[0][2] == "LAX"
+    assert calls[1][0] == "one-way"
+    assert calls[1][1] == "LAX"
+    assert calls[1][2] == "SFO"
+    assert flights[0]["direction"] == "outbound"
+    assert flights[1]["direction"] == "inbound"
+    assert "trip.round_trip=split_one_way" in payload["meta"]["warnings"]
+
+
 def test_search_multi_city_success_contract(monkeypatch):
     monkeypatch.setattr(ff_client, "search_flights", lambda _query: _fake_provider_response())
 
@@ -270,6 +305,69 @@ def test_search_locale_currency_propagation(monkeypatch):
     payload = json.loads(result.stdout)
     assert payload["query"]["lang"] == "ja-JP"
     assert payload["query"]["currency"] == "JPY"
+
+
+def test_search_locale_fallback_from_ja_to_en_when_max_stops_filters_all(monkeypatch):
+    calls = []
+
+    def _fake_search(query):
+        calls.append(query.lang)
+        if query.lang == "ja-JP":
+            return ff_client.ProviderResponse(
+                current_price="typical",
+                warnings=[],
+                flights=[
+                    {
+                        "rank": 1,
+                        "is_best": True,
+                        "airline": "日本航空 (JAL)",
+                        "departure": "4月5日(日)、11:40",
+                        "arrival": "4月5日(日)、17:45",
+                        "arrival_time_ahead": "",
+                        "duration": "7 時間 5 分",
+                        "stops": "Unknown",
+                        "delay": None,
+                        "price": {"text": "¥149120", "amount": 149120, "currency": "JPY"},
+                    }
+                ],
+            )
+        return ff_client.ProviderResponse(
+            current_price="typical",
+            warnings=[],
+            flights=[
+                {
+                    "rank": 1,
+                    "is_best": True,
+                    "airline": "JAL",
+                    "departure": "11:40 AM",
+                    "arrival": "5:45 PM",
+                    "arrival_time_ahead": "",
+                    "duration": "7 hr 5 min",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$100", "amount": 100, "currency": "USD"},
+                }
+            ],
+        )
+
+    monkeypatch.setattr(ff_client, "search_flights", _fake_search)
+    result = runner.invoke(
+        app,
+        _base_args()
+        + [
+            "--lang",
+            "ja-JP",
+            "--currency",
+            "JPY",
+            "--max-stops",
+            "0",
+        ],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert calls == ["ja-JP", "en-US"]
+    assert payload["results"][0]["flight_count"] == 1
+    assert "locale.fallback=ja->en-US" in payload["meta"]["warnings"]
 
 
 def test_search_airline_filter_matches_nh_with_japanese_airline_text(monkeypatch):

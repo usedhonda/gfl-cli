@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import timedelta
 from importlib.metadata import PackageNotFoundError, version
 from time import perf_counter
@@ -115,6 +116,60 @@ def _normalize_search_result(
     ]
 
 
+def _should_locale_fallback(*, query: SearchQuery, flights: list[dict[str, object]]) -> bool:
+    return query.lang.lower().startswith("ja") and query.max_stops == 0 and not flights
+
+
+def _search_with_postprocess(
+    query: SearchQuery,
+) -> tuple[ff_client.ProviderResponse, list[dict[str, object]], list[str]]:
+    provider_response = ff_client.search_flights(query)
+    processed_flights, postprocess_warnings = apply_search_postprocess(
+        flights=provider_response.flights,
+        query=query,
+    )
+    warnings = _merge_warnings(provider_response.warnings, postprocess_warnings)
+
+    if _should_locale_fallback(query=query, flights=processed_flights):
+        fallback_query = replace(query, lang="en-US")
+        fallback_response = ff_client.search_flights(fallback_query)
+        fallback_flights, fallback_postprocess_warnings = apply_search_postprocess(
+            flights=fallback_response.flights,
+            query=fallback_query,
+        )
+        if fallback_flights:
+            provider_response = fallback_response
+            processed_flights = fallback_flights
+            warnings = _merge_warnings(
+                warnings,
+                fallback_response.warnings,
+                fallback_postprocess_warnings,
+                ["locale.fallback=ja->en-US"],
+            )
+
+    return provider_response, processed_flights, warnings
+
+
+def _annotate_directional_rows(
+    *,
+    flights: list[dict[str, object]],
+    direction: str,
+    origin: str,
+    destination: str,
+    date: str,
+) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for leg_rank, row in enumerate(flights, start=1):
+        cloned = dict(row)
+        cloned["direction"] = direction
+        cloned["leg_origin"] = origin
+        cloned["leg_destination"] = destination
+        cloned["leg_date"] = date
+        cloned["leg_rank"] = leg_rank
+        rows.append(cloned)
+    return rows
+
+
 def run_search(raw_query: SearchQueryInput) -> dict[str, object]:
     started_at = perf_counter()
     request_id = _request_id()
@@ -130,22 +185,77 @@ def run_search(raw_query: SearchQueryInput) -> dict[str, object]:
 
     try:
         query = validate_search_input(raw_query)
-        provider_response = ff_client.search_flights(query)
-        processed_flights, postprocess_warnings = apply_search_postprocess(
-            flights=provider_response.flights,
-            query=query,
-        )
-        if query.segments:
-            query_segments = [segment.to_payload() for segment in query.segments]
-            for row in processed_flights:
-                current_segments = row.get("segments")
-                if isinstance(current_segments, list) and current_segments:
-                    continue
-                row["segments"] = [dict(segment) for segment in query_segments]
+        warnings: list[str] = []
+        current_price_band = "typical"
 
-        warnings = _merge_warnings(provider_response.warnings, postprocess_warnings)
-        if query.trip == "multi-city":
-            warnings = _merge_warnings(warnings, ["multi_city.segments=request_echo"])
+        if query.trip == "round-trip":
+            if query.return_date is None:
+                raise InputValidationError("return-date is required when trip=round-trip")
+
+            outbound_query = replace(
+                query,
+                trip="one-way",
+                return_date=None,
+                origin=query.origin,
+                destination=query.destination,
+                date=query.date,
+            )
+            inbound_query = replace(
+                query,
+                trip="one-way",
+                return_date=None,
+                origin=query.destination,
+                destination=query.origin,
+                date=query.return_date,
+            )
+
+            outbound_response, outbound_flights, outbound_warnings = _search_with_postprocess(
+                outbound_query
+            )
+            inbound_response, inbound_flights, inbound_warnings = _search_with_postprocess(
+                inbound_query
+            )
+
+            outbound_rows = _annotate_directional_rows(
+                flights=outbound_flights,
+                direction="outbound",
+                origin=query.origin,
+                destination=query.destination,
+                date=query.date.isoformat(),
+            )
+            inbound_rows = _annotate_directional_rows(
+                flights=inbound_flights,
+                direction="inbound",
+                origin=query.destination,
+                destination=query.origin,
+                date=query.return_date.isoformat(),
+            )
+            processed_flights = outbound_rows + inbound_rows
+            for rank, row in enumerate(processed_flights, start=1):
+                row["rank"] = rank
+
+            warnings = _merge_warnings(
+                outbound_warnings,
+                inbound_warnings,
+                ["trip.round_trip=split_one_way"],
+            )
+            current_price_band = (
+                f"outbound:{outbound_response.current_price}|"
+                f"inbound:{inbound_response.current_price}"
+            )
+        else:
+            provider_response, processed_flights, warnings = _search_with_postprocess(query)
+            current_price_band = provider_response.current_price
+            if query.segments:
+                query_segments = [segment.to_payload() for segment in query.segments]
+                for row in processed_flights:
+                    current_segments = row.get("segments")
+                    if isinstance(current_segments, list) and current_segments:
+                        continue
+                    row["segments"] = [dict(segment) for segment in query_segments]
+
+            if query.trip == "multi-city":
+                warnings = _merge_warnings(warnings, ["multi_city.segments=request_echo"])
 
         return success_response(
             request_id=request_id,
@@ -153,7 +263,7 @@ def run_search(raw_query: SearchQueryInput) -> dict[str, object]:
             results=_normalize_search_result(
                 query=query,
                 flights=processed_flights,
-                current_price=provider_response.current_price,
+                current_price=current_price_band,
             ),
             started_at=started_at,
             warnings=warnings,
