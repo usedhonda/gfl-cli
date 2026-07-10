@@ -6,6 +6,11 @@ __pycache__/
 artifacts/
 .DS_Store
 
-AGENTS.md
-CLAUDE.md
 docs/log/
+
+# >>> project-bootstrap local-only >>>
+CLAUDE.local.md
+.codex/config.toml
+.local/
+.cc-status-bar.voice.json
+# <<< project-bootstrap local-only <<<

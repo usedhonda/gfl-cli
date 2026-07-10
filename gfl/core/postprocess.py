@@ -8,7 +8,10 @@ from typing import Any
 from gfl.core.models import SearchQuery
 
 _AMPM_TIME_RE = re.compile(r"(?P<hour>\d{1,2}):(?P<minute>\d{2})\s*(?P<ampm>[AP]M)", re.IGNORECASE)
-_DURATION_RE = re.compile(r"(?:(?P<hr>\d+)\s*hr)?\s*(?:(?P<min>\d+)\s*min)?", re.IGNORECASE)
+_TIME_24H_RE = re.compile(r"(?<!\d)(?P<hour>[01]?\d|2[0-3]):(?P<minute>[0-5]\d)(?!\d)")
+_PRICE_AMOUNT_RE = re.compile(r"\d[\d,]*")
+_FLIGHT_NUMBER_CODE_RE = re.compile(r"^(?P<code>[A-Z0-9]{2,3})\d{1,4}$")
+_CODE_IN_TEXT_RE = re.compile(r"\((?P<code>[A-Z0-9]{2,3})\)")
 
 # Best-effort keyword mapping for common airline IATA codes.
 _AIRLINE_CODE_KEYWORDS: dict[str, tuple[str, ...]] = {
@@ -47,29 +50,39 @@ def _normalize_space(text: str) -> str:
 def parse_ampm_time_minutes(raw: str) -> int | None:
     text = _normalize_space(raw)
     match = _AMPM_TIME_RE.search(text)
-    if not match:
+    if match:
+        hour = int(match.group("hour"))
+        minute = int(match.group("minute"))
+        ampm = match.group("ampm").upper()
+
+        if hour == 12:
+            hour = 0
+        if ampm == "PM":
+            hour += 12
+
+        return hour * 60 + minute
+
+    match_24h = _TIME_24H_RE.search(text)
+    if not match_24h:
         return None
-
-    hour = int(match.group("hour"))
-    minute = int(match.group("minute"))
-    ampm = match.group("ampm").upper()
-
-    if hour == 12:
-        hour = 0
-    if ampm == "PM":
-        hour += 12
-
-    return hour * 60 + minute
+    return int(match_24h.group("hour")) * 60 + int(match_24h.group("minute"))
 
 
 def parse_duration_minutes(raw: str) -> int | None:
     text = _normalize_space(raw)
-    match = _DURATION_RE.search(text)
-    if not match:
-        return None
+    lower = text.lower()
+    hr_match = re.search(r"(\d+)\s*(?:hr|hour|h)\b", lower)
+    min_match = re.search(r"(\d+)\s*(?:min|minute|m)\b", lower)
 
-    hr = int(match.group("hr")) if match.group("hr") else 0
-    minute = int(match.group("min")) if match.group("min") else 0
+    hr = int(hr_match.group(1)) if hr_match else 0
+    minute = int(min_match.group(1)) if min_match else 0
+
+    if not hr_match and not min_match:
+        colon_match = re.search(r"(?<!\d)(\d{1,2}):(\d{2})(?!\d)", text)
+        if colon_match:
+            hr = int(colon_match.group(1))
+            minute = int(colon_match.group(2))
+
     total = hr * 60 + minute
     return total if total > 0 else None
 
@@ -87,16 +100,49 @@ def _airline_keywords(code: str) -> tuple[str, ...]:
     return _AIRLINE_CODE_KEYWORDS.get(normalized, (normalized.lower(),))
 
 
-def _matches_airline_filter(airline_text: str, codes: tuple[str, ...]) -> bool:
-    normalized = _normalize_space(airline_text).lower()
+def _extract_airline_codes_from_row(row: dict[str, Any]) -> set[str]:
+    found: set[str] = set()
+
+    for field in ("airline", "operated_by"):
+        text = _normalize_space(str(row.get(field, ""))).upper()
+        for match in _CODE_IN_TEXT_RE.finditer(text):
+            found.add(match.group("code"))
+
+    raw_numbers = row.get("flight_numbers")
+    if isinstance(raw_numbers, list):
+        for value in raw_numbers:
+            normalized = str(value).upper().replace(" ", "")
+            match = _FLIGHT_NUMBER_CODE_RE.match(normalized)
+            if match:
+                found.add(match.group("code"))
+
+    return found
+
+
+def _matches_airline_filter(row: dict[str, Any], codes: tuple[str, ...]) -> bool:
+    normalized = _normalize_space(
+        f"{row.get('airline', '')} {row.get('operated_by', '')}"
+    ).lower()
     if not normalized:
         return False
 
+    row_codes = _extract_airline_codes_from_row(row)
+
     for code in codes:
+        normalized_code = code.upper().strip()
+        if normalized_code in row_codes:
+            return True
         for keyword in _airline_keywords(code):
             if keyword in normalized:
                 return True
     return False
+
+
+def _parse_price_amount(text: str) -> int | None:
+    match = _PRICE_AMOUNT_RE.search(text)
+    if not match:
+        return None
+    return int(match.group(0).replace(",", ""))
 
 
 def _filter_rows(
@@ -122,18 +168,28 @@ def _filter_rows(
                 continue
 
         if query.airline:
-            if not _matches_airline_filter(str(row.get("airline", "")), query.airline):
+            if not _matches_airline_filter(row, query.airline):
                 continue
 
         if query.max_price is not None:
             if not isinstance(price_amount, int):
-                unknown_counts["price"] += 1
-                continue
+                parsed_amount = _parse_price_amount(str(price.get("text", "")))
+                if parsed_amount is not None:
+                    price_amount = parsed_amount
+                    if isinstance(price, dict):
+                        price["amount"] = parsed_amount
+                else:
+                    unknown_counts["price"] += 1
+                    continue
             if price_amount > query.max_price:
                 continue
 
         if query.max_duration_min is not None:
-            duration_min = parse_duration_minutes(str(row.get("duration", "")))
+            duration_min = row.get("duration_min")
+            if not isinstance(duration_min, int):
+                duration_min = parse_duration_minutes(str(row.get("duration", "")))
+                if isinstance(duration_min, int):
+                    row["duration_min"] = duration_min
             if duration_min is None:
                 unknown_counts["duration"] += 1
                 continue
@@ -141,7 +197,11 @@ def _filter_rows(
                 continue
 
         if query.depart_after_min is not None or query.depart_before_min is not None:
-            departure_min = parse_ampm_time_minutes(str(row.get("departure", "")))
+            departure_min = row.get("departure_min")
+            if not isinstance(departure_min, int):
+                departure_min = parse_ampm_time_minutes(str(row.get("departure", "")))
+                if isinstance(departure_min, int):
+                    row["departure_min"] = departure_min
             if departure_min is None:
                 unknown_counts["departure_time"] += 1
                 continue
@@ -151,7 +211,11 @@ def _filter_rows(
                 continue
 
         if query.arrive_after_min is not None or query.arrive_before_min is not None:
-            arrival_min = parse_ampm_time_minutes(str(row.get("arrival", "")))
+            arrival_min = row.get("arrival_min")
+            if not isinstance(arrival_min, int):
+                arrival_min = parse_ampm_time_minutes(str(row.get("arrival", "")))
+                if isinstance(arrival_min, int):
+                    row["arrival_min"] = arrival_min
             if arrival_min is None:
                 unknown_counts["arrival_time"] += 1
                 continue

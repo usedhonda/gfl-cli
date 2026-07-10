@@ -1,4 +1,4 @@
-# SPEC.md - gfl v1.0 (Phase 1)
+# SPEC.md - gfl v1.1 (Phase 1)
 
 ## 1. Summary
 `gfl` is a JSON-first Google Flights CLI built on top of `fast-flights`.
@@ -102,7 +102,7 @@ Returns CLI and backend version metadata.
 }
 ```
 
-## 6. Error Code Registry (v1.0)
+## 6. Error Code Registry (v1.1)
 Allowed codes:
 - `INVALID_INPUT`
 - `UPSTREAM_FORMAT_CHANGED`
@@ -150,7 +150,7 @@ Minimum test matrix:
 9. `--format human` smoke test
 10. `version` contract test
 
-## 11. Release Criteria for v1.0
+## 11. Release Criteria for v1.1
 - Contract tests pass.
 - Manual smoke checks for:
   - `--currency JPY`
@@ -173,9 +173,19 @@ Any change to command names, output schema, or error code registry requires expl
   - `min_amount_in_range`
   - `max_amount_in_range`
   - `avg_amount_in_range`
+- `calendar` rows include:
+  - `trip_duration_days`
+  - `price_rank`
+  - `is_cheapest`
 
 ## 14. Extended Flight Metadata (Implemented)
 `results[0].flights[*]` may include the following backend-derived fields:
+- route context:
+  - `origin_airport`
+  - `destination_airport`
+  - `leg_origin`
+  - `leg_destination`
+  - `leg_date`
 - `self_transfer` (bool)
 - `emissions` object:
   - `kg_co2e`
@@ -189,3 +199,8 @@ Any change to command names, output schema, or error code registry requires expl
 - `operated_by`
 - `aircraft`
 - `amenities[]`
+- `fare_policy` object:
+  - `carry_on_included`
+  - `checked_bag_included`
+  - `changeable`
+  - `refundable`
