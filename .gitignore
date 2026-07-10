@@ -1,7 +1,3 @@
-# >>> project-bootstrap managed >>>
-.cc-status-bar.voice.json
-# <<< project-bootstrap managed <<<
-
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -10,6 +6,11 @@ __pycache__/
 artifacts/
 .DS_Store
 
-AGENTS.md
-CLAUDE.md
 docs/log/
+
+# >>> project-bootstrap local-only >>>
+CLAUDE.local.md
+.codex/config.toml
+.local/
+.cc-status-bar.voice.json
+# <<< project-bootstrap local-only <<<
