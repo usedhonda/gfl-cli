@@ -73,14 +73,17 @@ Use `--format human` or `--human` for opt-in human-readable output.
   - `--arrive-after/--arrive-before` (`HH:MM`, 24h)
   - `--max-duration-min`
 - `search` flight rows include backend metadata when available:
+  - route fields (`origin_airport`, `destination_airport`, `leg_origin`, `leg_destination`, `leg_date`)
   - `self_transfer`
   - `emissions` (`kg_co2e`, `delta_percent`, `relative_label`)
   - `layovers[]` (`airport_code`, `duration_text`, `duration_min`)
   - `flight_numbers[]`, `operated_by`, `aircraft`, `amenities[]`
+  - `fare_policy` (`carry_on_included`, `checked_bag_included`, `changeable`, `refundable`)
 - `search --trip multi-city` requires repeated `--segment FROM:TO:YYYY-MM-DD` (>=2)
   - current behavior is best-effort and may return `UPSTREAM_UNAVAILABLE` depending on upstream response shape
 - `calendar --view date-grid|price-graph` (default: `date-grid`)
 - `calendar --view price-graph` adds `results[*].graph` aggregate fields for AI-friendly parsing
+- `calendar` results include `price_rank` and `is_cheapest` for per-date comparison
 
 ## Error Codes
 

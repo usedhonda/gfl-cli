@@ -62,6 +62,8 @@ def test_calendar_success_contract(monkeypatch):
     assert payload["status"] == "success"
     assert len(payload["results"]) == 3
     assert all("graph" not in row for row in payload["results"])
+    assert [row["price_rank"] for row in payload["results"]] == [2, 1, 3]
+    assert [row["is_cheapest"] for row in payload["results"]] == [False, True, False]
 
 
 def test_calendar_invalid_range_returns_invalid_input():
@@ -135,3 +137,44 @@ def test_calendar_currency_and_view_warning(monkeypatch):
         assert graph["min_amount_in_range"] == 12000
         assert graph["max_amount_in_range"] == 12000
         assert graph["avg_amount_in_range"] == 12000.0
+        assert row["price_rank"] == 1
+        assert row["is_cheapest"] is True
+
+
+def test_calendar_round_trip_includes_trip_duration_days(monkeypatch):
+    monkeypatch.setattr(
+        ff_client,
+        "search_flights",
+        lambda _query: ff_client.ProviderResponse(
+            current_price="typical",
+            warnings=[],
+            flights=[
+                {
+                    "rank": 1,
+                    "is_best": True,
+                    "airline": "Example Air",
+                    "departure": "8:00 AM",
+                    "arrival": "9:00 AM",
+                    "arrival_time_ahead": "",
+                    "duration": "1 hr",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$100", "amount": 100, "currency": "USD"},
+                }
+            ],
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        _calendar_args()
+        + [
+            "--is-round-trip",
+            "--trip-duration",
+            "7",
+        ],
+    )
+    assert result.exit_code == 0
+
+    payload = json.loads(result.stdout)
+    assert all(row["trip_duration_days"] == 7 for row in payload["results"])

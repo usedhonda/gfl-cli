@@ -59,6 +59,20 @@ def test_search_one_way_success_contract(monkeypatch):
     assert payload["results"][0]["trip"] == "one-way"
 
 
+def test_search_one_way_adds_route_date_annotations(monkeypatch):
+    monkeypatch.setattr(ff_client, "search_flights", lambda _query: _fake_provider_response())
+
+    result = runner.invoke(app, _base_args())
+    assert result.exit_code == 0
+
+    payload = json.loads(result.stdout)
+    flight = payload["results"][0]["flights"][0]
+    assert flight["direction"] == "outbound"
+    assert flight["leg_origin"] == "SFO"
+    assert flight["leg_destination"] == "LAX"
+    assert flight["leg_date"] == "2026-03-23"
+
+
 def test_search_round_trip_success_contract(monkeypatch):
     monkeypatch.setattr(ff_client, "search_flights", lambda _query: _fake_provider_response())
 
@@ -443,6 +457,53 @@ def test_search_airline_filter_matches_jl_with_english_airline_text(monkeypatch)
     assert flights[0]["airline"] == "Japan Airlines (JAL)"
 
 
+def test_search_airline_filter_matches_from_flight_numbers(monkeypatch):
+    monkeypatch.setattr(
+        ff_client,
+        "search_flights",
+        lambda _query: ff_client.ProviderResponse(
+            current_price="typical",
+            warnings=[],
+            flights=[
+                {
+                    "rank": 1,
+                    "is_best": True,
+                    "airline": "Mystery Partner",
+                    "operated_by": "ANA",
+                    "flight_numbers": ["NH110"],
+                    "departure": "8:00 AM",
+                    "arrival": "9:00 AM",
+                    "arrival_time_ahead": "",
+                    "duration": "1 hr",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$100", "amount": 100, "currency": "USD"},
+                },
+                {
+                    "rank": 2,
+                    "is_best": False,
+                    "airline": "Other Air",
+                    "flight_numbers": ["DL10"],
+                    "departure": "10:00 AM",
+                    "arrival": "11:00 AM",
+                    "arrival_time_ahead": "",
+                    "duration": "1 hr",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$120", "amount": 120, "currency": "USD"},
+                },
+            ],
+        ),
+    )
+
+    result = runner.invoke(app, _base_args() + ["--airline", "NH"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    flights = payload["results"][0]["flights"]
+    assert len(flights) == 1
+    assert flights[0]["flight_numbers"] == ["NH110"]
+
+
 def test_no_flights_found_maps_to_upstream_unavailable(monkeypatch):
     """RuntimeError('No flights found') must map to UPSTREAM_UNAVAILABLE, not UPSTREAM_FORMAT_CHANGED."""
 
@@ -648,6 +709,59 @@ def test_search_depart_time_window_filters(monkeypatch):
     assert flights[0]["departure"] == "9:00 AM"
 
 
+def test_search_depart_time_window_filters_24h_format(monkeypatch):
+    monkeypatch.setattr(
+        ff_client,
+        "search_flights",
+        lambda _query: ff_client.ProviderResponse(
+            current_price="typical",
+            warnings=[],
+            flights=[
+                {
+                    "rank": 1,
+                    "is_best": True,
+                    "airline": "Example Air",
+                    "departure": "07:30",
+                    "arrival": "09:00",
+                    "arrival_time_ahead": "",
+                    "duration": "1h 30m",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$120", "amount": 120, "currency": "USD"},
+                },
+                {
+                    "rank": 2,
+                    "is_best": False,
+                    "airline": "Example Air",
+                    "departure": "11:45",
+                    "arrival": "13:15",
+                    "arrival_time_ahead": "",
+                    "duration": "1h 30m",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$110", "amount": 110, "currency": "USD"},
+                },
+            ],
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        _base_args()
+        + [
+            "--depart-after",
+            "08:00",
+            "--depart-before",
+            "12:00",
+        ],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    flights = payload["results"][0]["flights"]
+    assert len(flights) == 1
+    assert flights[0]["departure"] == "11:45"
+
+
 def test_search_max_duration_filters_and_emits_unknown_duration_warning(monkeypatch):
     monkeypatch.setattr(
         ff_client,
@@ -704,6 +818,95 @@ def test_search_max_duration_filters_and_emits_unknown_duration_warning(monkeypa
     assert len(flights) == 1
     assert flights[0]["duration"] == "1 hr"
     assert "postprocess.duration.unknown=1" in payload["meta"]["warnings"]
+
+
+def test_search_max_duration_supports_h_colon_m_formats(monkeypatch):
+    monkeypatch.setattr(
+        ff_client,
+        "search_flights",
+        lambda _query: ff_client.ProviderResponse(
+            current_price="typical",
+            warnings=[],
+            flights=[
+                {
+                    "rank": 1,
+                    "is_best": True,
+                    "airline": "Example Air",
+                    "departure": "8:00 AM",
+                    "arrival": "9:30 AM",
+                    "arrival_time_ahead": "",
+                    "duration": "1h 30m",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$120", "amount": 120, "currency": "USD"},
+                },
+                {
+                    "rank": 2,
+                    "is_best": False,
+                    "airline": "Example Air",
+                    "departure": "10:00 AM",
+                    "arrival": "12:45 PM",
+                    "arrival_time_ahead": "",
+                    "duration": "2:45",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$110", "amount": 110, "currency": "USD"},
+                },
+            ],
+        ),
+    )
+
+    result = runner.invoke(app, _base_args() + ["--max-duration-min", "120"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    flights = payload["results"][0]["flights"]
+    assert len(flights) == 1
+    assert flights[0]["duration"] == "1h 30m"
+
+
+def test_search_max_price_uses_text_amount_fallback(monkeypatch):
+    monkeypatch.setattr(
+        ff_client,
+        "search_flights",
+        lambda _query: ff_client.ProviderResponse(
+            current_price="typical",
+            warnings=[],
+            flights=[
+                {
+                    "rank": 1,
+                    "is_best": True,
+                    "airline": "Example Air",
+                    "departure": "8:00 AM",
+                    "arrival": "10:00 AM",
+                    "arrival_time_ahead": "",
+                    "duration": "2 hr",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$95", "amount": None, "currency": "USD"},
+                },
+                {
+                    "rank": 2,
+                    "is_best": False,
+                    "airline": "Example Air",
+                    "departure": "10:00 AM",
+                    "arrival": "12:00 PM",
+                    "arrival_time_ahead": "",
+                    "duration": "2 hr",
+                    "stops": 0,
+                    "delay": None,
+                    "price": {"text": "$140", "amount": None, "currency": "USD"},
+                },
+            ],
+        ),
+    )
+
+    result = runner.invoke(app, _base_args() + ["--max-price", "100"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    flights = payload["results"][0]["flights"]
+    assert len(flights) == 1
+    assert flights[0]["price"]["amount"] == 95
+    assert all(not warning.startswith("postprocess.price.unknown=") for warning in payload["meta"]["warnings"])
 
 
 def test_search_invalid_depart_window_returns_invalid_input():

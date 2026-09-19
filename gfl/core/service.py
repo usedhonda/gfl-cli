@@ -149,6 +149,59 @@ def _annotate_directional_rows(
     return rows
 
 
+def _annotate_single_direction_rows(
+    *,
+    query: SearchQuery,
+    flights: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    annotated: list[dict[str, object]] = []
+    default_direction = "multi-city" if query.trip == "multi-city" else "outbound"
+
+    for leg_rank, row in enumerate(flights, start=1):
+        cloned = dict(row)
+        origin = cloned.get("origin_airport") or query.origin
+        destination = cloned.get("destination_airport") or query.destination
+        date_value = query.date.isoformat()
+
+        segments = cloned.get("segments")
+        if query.trip == "multi-city" and isinstance(segments, list) and segments:
+            first_segment = segments[0] if isinstance(segments[0], dict) else {}
+            date_value = str(first_segment.get("date") or date_value)
+
+        cloned["direction"] = str(cloned.get("direction") or default_direction)
+        cloned["leg_origin"] = str(origin)
+        cloned["leg_destination"] = str(destination)
+        cloned["leg_date"] = date_value
+        cloned["leg_rank"] = leg_rank
+        annotated.append(cloned)
+
+    return annotated
+
+
+def _annotate_calendar_price_rank(results: list[dict[str, object]]) -> None:
+    ranked: list[tuple[int, int]] = []
+    for index, row in enumerate(results):
+        lowest = row.get("lowest_price") if isinstance(row.get("lowest_price"), dict) else {}
+        amount = lowest.get("amount")
+        if isinstance(amount, int):
+            ranked.append((index, amount))
+
+    ranked.sort(key=lambda item: item[1])
+    rank_map: dict[int, int] = {}
+    current_rank = 0
+    last_amount: int | None = None
+    for index, amount in ranked:
+        if last_amount is None or amount > last_amount:
+            current_rank += 1
+            last_amount = amount
+        rank_map[index] = current_rank
+
+    for index, row in enumerate(results):
+        rank = rank_map.get(index)
+        row["price_rank"] = rank
+        row["is_cheapest"] = rank == 1 if rank is not None else False
+
+
 def run_search(raw_query: SearchQueryInput) -> dict[str, object]:
     started_at = perf_counter()
     request_id = _request_id()
@@ -232,6 +285,11 @@ def run_search(raw_query: SearchQueryInput) -> dict[str, object]:
                     if isinstance(current_segments, list) and current_segments:
                         continue
                     row["segments"] = [dict(segment) for segment in query_segments]
+
+            processed_flights = _annotate_single_direction_rows(
+                query=query,
+                flights=processed_flights,
+            )
 
             if query.trip == "multi-city":
                 warnings = _merge_warnings(warnings, ["multi_city.segments=request_echo"])
@@ -342,6 +400,9 @@ def run_calendar(raw_query: CalendarQueryInput) -> dict[str, object]:
                 {
                     "date": cursor.isoformat(),
                     "return_date": return_date.isoformat() if return_date else None,
+                    "trip_duration_days": (
+                        (return_date - cursor).days if return_date is not None else None
+                    ),
                     "current_price_band": provider_response.current_price,
                     "flight_count": len(flights),
                     "lowest_price": {
@@ -351,6 +412,8 @@ def run_calendar(raw_query: CalendarQueryInput) -> dict[str, object]:
                 }
             )
             cursor += timedelta(days=1)
+
+        _annotate_calendar_price_rank(results)
 
         if query.view == "price-graph":
             amounts = [

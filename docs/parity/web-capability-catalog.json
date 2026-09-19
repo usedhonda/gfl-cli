@@ -4,11 +4,11 @@
     "web_label": "Basic route/date search",
     "web_control_type": "form",
     "scope": "search",
-    "cli_status": "partial",
+    "cli_status": "supported",
     "backend_status": "supported",
     "mapped_flag": "--origin --destination --date",
     "implementation_priority": "P0",
-    "notes": "Core capability"
+    "notes": "Core capability with route/date annotation in normalized rows"
   },
   {
     "capability_id": "search_round_trip",
@@ -52,7 +52,7 @@
     "backend_status": "partial",
     "mapped_flag": "--airline",
     "implementation_priority": "P1",
-    "notes": "Best-effort mapping by keywords"
+    "notes": "Keywords + flight number prefix/operator text matching"
   },
   {
     "capability_id": "filter_departure_window",
@@ -63,7 +63,7 @@
     "backend_status": "partial",
     "mapped_flag": "--depart-after --depart-before",
     "implementation_priority": "P1",
-    "notes": "Depends on text parse quality"
+    "notes": "AM/PM and 24h parse supported with numeric fallback fields"
   },
   {
     "capability_id": "filter_arrival_window",
@@ -74,7 +74,7 @@
     "backend_status": "partial",
     "mapped_flag": "--arrive-after --arrive-before",
     "implementation_priority": "P1",
-    "notes": "Depends on text parse quality"
+    "notes": "AM/PM and 24h parse supported with numeric fallback fields"
   },
   {
     "capability_id": "filter_max_price",
@@ -85,7 +85,7 @@
     "backend_status": "partial",
     "mapped_flag": "--max-price",
     "implementation_priority": "P1",
-    "notes": "Works when numeric price extracted"
+    "notes": "Uses numeric amount with text-based fallback parsing"
   },
   {
     "capability_id": "filter_max_duration",
@@ -96,7 +96,7 @@
     "backend_status": "partial",
     "mapped_flag": "--max-duration-min",
     "implementation_priority": "P1",
-    "notes": "Works when duration parse succeeds"
+    "notes": "Supports hr/min and h:m style duration parsing"
   },
   {
     "capability_id": "sort_best_cheapest",
@@ -118,7 +118,7 @@
     "backend_status": "partial",
     "mapped_flag": "--view date-grid|price-graph",
     "implementation_priority": "P1",
-    "notes": "View reflected as warning marker and results[*].graph aggregate fields"
+    "notes": "Includes per-date rank and cheapest marker in addition to graph aggregates"
   },
   {
     "capability_id": "flight_emissions_details",
@@ -140,7 +140,7 @@
     "backend_status": "partial",
     "mapped_flag": "results[*].flights[*].layovers",
     "implementation_priority": "P1",
-    "notes": "Best-effort extraction from route/aria text; locale-dependent"
+    "notes": "Best-effort extraction from route/aria text"
   },
   {
     "capability_id": "flight_numbers_and_operator",
@@ -151,17 +151,17 @@
     "backend_status": "partial",
     "mapped_flag": "results[*].flights[*].flight_numbers / operated_by / aircraft",
     "implementation_priority": "P1",
-    "notes": "Flight numbers sourced from travel impact itinerary param when present"
+    "notes": "Travel impact + route text fallback extraction"
   },
   {
     "capability_id": "bags_and_change_policies",
     "web_label": "Bags/change policy",
     "web_control_type": "details",
     "scope": "search",
-    "cli_status": "unsupported",
-    "backend_status": "backend_blocked",
-    "mapped_flag": null,
+    "cli_status": "partial",
+    "backend_status": "partial",
+    "mapped_flag": "results[*].flights[*].fare_policy",
     "implementation_priority": "P3",
-    "notes": "Not exposed by current backend mapping"
+    "notes": "Best-effort extraction from route/aria text; completeness depends on upstream labels"
   }
 ]
